@@ -4,6 +4,7 @@ import com.iamzakaria.auctionplatform.auth.dto.LoginRequest;
 import com.iamzakaria.auctionplatform.auth.dto.LoginResponse;
 import com.iamzakaria.auctionplatform.auth.dto.RegisterRequest;
 import com.iamzakaria.auctionplatform.security.SecurityUser;
+import com.iamzakaria.auctionplatform.security.jwt.JwtService;
 import com.iamzakaria.auctionplatform.user.dto.UserResponse;
 import com.iamzakaria.auctionplatform.user.entity.Role;
 import com.iamzakaria.auctionplatform.user.entity.User;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -28,17 +30,20 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
     private final Clock clock;
 
     public AuthService(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             AuthenticationManager authenticationManager,
+            JwtService jwtService,
             Clock clock
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
         this.clock = clock;
     }
 
@@ -73,6 +78,17 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(UUID userId) {
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(
+                        () -> new UserNotFoundException(userId)
+                );
+
+        return UserMapper.toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         String normalizedEmail =
                 normalizeEmail(request.email());
@@ -102,8 +118,13 @@ public class AuthService {
                         )
                 );
 
+        String accessToken =
+                jwtService.generateToken(securityUser);
+
         return new LoginResponse(
-                "Login successful.",
+                accessToken,
+                "Bearer",
+                jwtService.getExpiration(),
                 UserMapper.toResponse(user)
         );
     }

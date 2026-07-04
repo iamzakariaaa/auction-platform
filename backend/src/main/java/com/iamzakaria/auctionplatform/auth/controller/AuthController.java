@@ -9,10 +9,9 @@ import com.iamzakaria.auctionplatform.user.dto.UserResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import com.iamzakaria.auctionplatform.security.SecurityUser;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -41,6 +40,23 @@ public class AuthController {
     ) {
         return ResponseEntity.ok(
                 authService.login(request)
+        );
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(
+            Authentication authentication
+    ) {
+        Object principal = authentication.getPrincipal();
+
+        if (!(principal instanceof SecurityUser securityUser)) {
+            throw new IllegalStateException(
+                    "Authenticated principal has an unexpected type."
+            );
+        }
+
+        return ResponseEntity.ok(
+                authService.getCurrentUser(securityUser.getId())
         );
     }
 }
