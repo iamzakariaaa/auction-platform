@@ -8,11 +8,14 @@ import com.iamzakaria.auctionplatform.user.exception.EmailAlreadyExistsException
 import com.iamzakaria.auctionplatform.user.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.AuthenticationException;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -60,6 +63,20 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuthenticationFailure(
+            AuthenticationException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.UNAUTHORIZED,
+                "INVALID_CREDENTIALS",
+                "Invalid email or password.",
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
     @ExceptionHandler({
             InvalidAuctionScheduleException.class,
             AuctionNotEditableException.class
@@ -87,8 +104,11 @@ public class GlobalExceptionHandler {
                         .getFieldErrors()
                         .stream()
                         .collect(Collectors.toMap(
-                                error -> error.getField(),
-                                error -> error.getDefaultMessage(),
+                                FieldError::getField,
+                                error -> Objects.requireNonNullElse(
+                                        error.getDefaultMessage(),
+                                        "Invalid value."
+                                ),
                                 (first, second) -> first
                         ));
 

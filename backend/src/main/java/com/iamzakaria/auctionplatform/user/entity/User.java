@@ -5,11 +5,6 @@ import lombok.*;
 import java.time.Instant;
 import java.util.UUID;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Setter
-@Getter
-@EqualsAndHashCode
 @Entity
 @Table(
         name = "users",
@@ -20,6 +15,10 @@ import java.util.UUID;
                 )
         }
 )
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Id
@@ -50,5 +49,4 @@ public class User {
 
     @Column(name = "updated_at")
     private Instant updatedAt;
-
 }
