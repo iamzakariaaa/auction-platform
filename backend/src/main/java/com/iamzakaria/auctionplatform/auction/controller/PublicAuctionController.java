@@ -1,11 +1,12 @@
 package com.iamzakaria.auctionplatform.auction.controller;
 
-import com.iamzakaria.auctionplatform.auction.dto.AuctionResponse;
+import com.iamzakaria.auctionplatform.auction.dto.AuctionDetailsResponse;
 import com.iamzakaria.auctionplatform.auction.dto.AuctionSummaryResponse;
 import com.iamzakaria.auctionplatform.auction.entity.AuctionStatus;
 import com.iamzakaria.auctionplatform.auction.service.AuctionQueryService;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -23,12 +24,13 @@ public class PublicAuctionController {
     }
 
     @GetMapping("/{auctionId}")
-    public AuctionResponse getById(
+    public ResponseEntity<AuctionDetailsResponse> getAuctionDetails(
             @PathVariable UUID auctionId
     ) {
-        return queryService.getById(auctionId);
+        return ResponseEntity.ok(
+                queryService.getAuctionDetails(auctionId)
+        );
     }
-
     @GetMapping
     public Page<AuctionSummaryResponse> getAll(
             @RequestParam(required = false)
