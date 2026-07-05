@@ -28,6 +28,10 @@ security:
     secret: ${JWT_SECRET}
     expiration: 3600000
 
+auction:
+  lifecycle:
+    interval: 30000
+
 management:
   endpoints:
     web:
