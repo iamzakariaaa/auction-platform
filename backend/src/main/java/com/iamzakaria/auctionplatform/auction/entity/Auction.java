@@ -11,7 +11,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Setter
 @Getter
-@EqualsAndHashCode
 @Entity
 @Table(
         name = "auctions",

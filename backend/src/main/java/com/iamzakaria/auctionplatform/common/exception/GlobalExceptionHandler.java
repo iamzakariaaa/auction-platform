@@ -3,6 +3,9 @@ package com.iamzakaria.auctionplatform.common.exception;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotEditableException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException;
 import com.iamzakaria.auctionplatform.auction.exception.InvalidAuctionScheduleException;
+import com.iamzakaria.auctionplatform.bid.exception.AuctionNotActiveException;
+import com.iamzakaria.auctionplatform.bid.exception.BidTooLowException;
+import com.iamzakaria.auctionplatform.bid.exception.SelfOutbidException;
 import com.iamzakaria.auctionplatform.common.response.ApiError;
 import com.iamzakaria.auctionplatform.user.exception.EmailAlreadyExistsException;
 import com.iamzakaria.auctionplatform.user.exception.UserNotFoundException;
@@ -20,7 +23,34 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
+    ) {
+        Map<String, String> errors =
+                exception.getBindingResult()
+                        .getFieldErrors()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                FieldError::getField,
+                                error -> Objects.requireNonNullElse(
+                                        error.getDefaultMessage(),
+                                        "Invalid value."
+                                ),
+                                (first, second) -> first
+                        ));
 
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_FAILED",
+                "The request contains invalid values.",
+                request.getRequestURI(),
+                errors
+        );
+    }
+
+    //AUTH EXCEPTION HANDLER
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ApiError> handleUserNotFound(
             UserNotFoundException exception,
@@ -49,6 +79,7 @@ public class GlobalExceptionHandler {
         );
     }
 
+    //AUCTION EXCEPTION HANDLER
     @ExceptionHandler(AuctionNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(
             AuctionNotFoundException exception,
@@ -94,33 +125,46 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidation(
-            MethodArgumentNotValidException exception,
+    //BID EXCEPTION HANDLER
+    @ExceptionHandler(BidTooLowException.class)
+    public ResponseEntity<ApiError> handleBidTooLow(
+            BidTooLowException exception,
             HttpServletRequest request
     ) {
-        Map<String, String> errors =
-                exception.getBindingResult()
-                        .getFieldErrors()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                FieldError::getField,
-                                error -> Objects.requireNonNullElse(
-                                        error.getDefaultMessage(),
-                                        "Invalid value."
-                                ),
-                                (first, second) -> first
-                        ));
-
         return buildError(
-                HttpStatus.BAD_REQUEST,
-                "VALIDATION_FAILED",
-                "The request contains invalid values.",
+                HttpStatus.CONFLICT,
+                "BID_TOO_LOW",
+                exception.getMessage(),
                 request.getRequestURI(),
-                errors
+                Map.of()
         );
     }
-
+    @ExceptionHandler(AuctionNotActiveException.class)
+    public ResponseEntity<ApiError> handleAuctionNotActive(
+            AuctionNotActiveException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.CONFLICT,
+                "AUCTION_NOT_ACTIVE",
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+    @ExceptionHandler(SelfOutbidException.class)
+    public ResponseEntity<ApiError> handleSelfOutbid(
+            SelfOutbidException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.CONFLICT,
+                "ALREADY_HIGHEST_BIDDER",
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
     private ResponseEntity<ApiError> buildError(
             HttpStatus status,
             String code,

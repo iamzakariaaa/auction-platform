@@ -1,0 +1,26 @@
+package com.iamzakaria.auctionplatform.bid.mapper;
+
+import com.iamzakaria.auctionplatform.bid.dto.BidResponse;
+import com.iamzakaria.auctionplatform.bid.entity.Bid;
+
+public final class BidMapper {
+
+    private BidMapper() {
+    }
+
+    public static BidResponse toResponse(Bid bid) {
+        String bidderName =
+                bid.getBidder().getFirstName()
+                        + " "
+                        + bid.getBidder().getLastName();
+
+        return new BidResponse(
+                bid.getId(),
+                bid.getAuction().getId(),
+                bid.getBidder().getId(),
+                bidderName,
+                bid.getAmount(),
+                bid.getCreatedAt()
+        );
+    }
+}

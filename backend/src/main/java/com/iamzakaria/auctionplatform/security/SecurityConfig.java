@@ -3,6 +3,7 @@ package com.iamzakaria.auctionplatform.security;
 import com.iamzakaria.auctionplatform.security.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -68,16 +69,26 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auctions/*/bids"
+                        ).hasRole("CUSTOMER")
+
+                        .requestMatchers(
+                                HttpMethod.GET,
                                 "/api/auctions/**"
                         ).permitAll()
 
                         .requestMatchers(
-                                "/actuator/health"
-                        ).permitAll()
+                                "/api/users/me/**"
+                        ).authenticated()
 
                         .requestMatchers(
                                 "/api/admin/**"
                         ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                "/actuator/health"
+                        ).permitAll()
 
                         .anyRequest().authenticated()
                 )
