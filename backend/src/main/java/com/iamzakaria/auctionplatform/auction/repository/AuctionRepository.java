@@ -12,6 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,19 +45,22 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
             @Param("now") Instant now
     );
 
-    //This changes expired auctions status to ENDED.
-    @Modifying(clearAutomatically = true)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-            UPDATE Auction auction
-            SET auction.status = :endedStatus,
-                auction.updatedAt = :now
-            WHERE auction.status IN :statuses
-              AND auction.endTime <= :now
-            """)
-    int endExpiredAuctions(
-            @Param("statuses") Iterable<AuctionStatus> statuses,
-            @Param("endedStatus") AuctionStatus endedStatus,
+        SELECT auction
+        FROM Auction auction
+        WHERE auction.status IN :statuses
+          AND auction.endTime <= :now
+        ORDER BY auction.endTime
+        """)
+    List<Auction> findExpiredAuctionsForUpdate(
+            @Param("statuses") Collection<AuctionStatus> statuses,
             @Param("now") Instant now
+    );
+
+    Page<Auction> findByWinnerIdOrderByEndTimeDesc(
+            UUID winnerId,
+            Pageable pageable
     );
 
     Page<Auction> findByStatus(

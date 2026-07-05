@@ -21,6 +21,8 @@ public record AuctionDetailsResponse(
         long bidCount,
         BigDecimal highestBid,
         String leadingBidderName,
-        long timeRemainingSeconds
+        long timeRemainingSeconds,
+        UUID winningBidId,
+        String winnerName
 ) {
 }

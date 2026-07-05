@@ -78,9 +78,8 @@ public class SecurityConfig {
                                 "/api/auctions/**"
                         ).permitAll()
 
-                        .requestMatchers(
-                                "/api/users/me/**"
-                        ).authenticated()
+                        .requestMatchers("/api/users/me/**")
+                        .hasRole("CUSTOMER")
 
                         .requestMatchers(
                                 "/api/admin/**"

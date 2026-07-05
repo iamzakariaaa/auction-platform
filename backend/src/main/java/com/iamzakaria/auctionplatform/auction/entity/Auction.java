@@ -1,5 +1,7 @@
 package com.iamzakaria.auctionplatform.auction.entity;
 
+import com.iamzakaria.auctionplatform.bid.entity.Bid;
+import com.iamzakaria.auctionplatform.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -73,6 +75,24 @@ public class Auction {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "winning_bid_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_auctions_winning_bid"
+            )
+    )
+    private Bid winningBid;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "winner_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_auctions_winner"
+            )
+    )
+    private User winner;
 
     @Column(name = "updated_at")
     private Instant updatedAt;
