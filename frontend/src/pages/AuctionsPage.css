@@ -1,0 +1,40 @@
+.auctions-page h1 {
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.auction-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.auction-card {
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 5%);
+}
+
+.auction-card h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+.auction-card p {
+  margin: 8px 0;
+}
+
+.auction-card a {
+  display: inline-block;
+  margin-top: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.error-message {
+  color: #b91c1c;
+}
