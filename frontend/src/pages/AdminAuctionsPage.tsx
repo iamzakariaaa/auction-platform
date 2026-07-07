@@ -396,6 +396,12 @@ function AdminAuctionsPage() {
                     >
                       View
                     </Link>
+                    <Link
+                        className="view-link"
+                        to={`/admin/auctions/${auction.id}/bids`}
+                        >
+                        View Bids
+                        </Link>
 
                     {editable && (
                       <>

@@ -30,3 +30,18 @@ export async function getMyBids(
 
   return response.data;
 }
+
+export async function getAuctionBids(
+  auctionId: string,
+  limit = 100,
+): Promise<BidResponse[]> {
+  const response = await apiClient.get<
+    BidResponse[]
+  >(`/api/auctions/${auctionId}/bids`, {
+    params: {
+      limit,
+    },
+  });
+
+  return response.data;
+}
