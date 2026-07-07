@@ -1,0 +1,187 @@
+.won-auctions-page {
+  padding: 32px 0 48px;
+}
+
+.won-auctions-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.won-auctions-header h1 {
+  margin: 4px 0 8px;
+  color: #111827;
+  font-size: 2rem;
+}
+
+.won-auctions-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.won-auctions-eyebrow {
+  color: #2563eb !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.won-auctions-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(290px, 1fr));
+  gap: 20px;
+}
+
+.won-auction-card {
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow:
+    0 4px 14px rgb(15 23 42 / 5%);
+}
+
+.won-auction-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.won-auction-heading h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.25rem;
+}
+
+.won-auction-label {
+  margin: 0 0 6px;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.won-badge {
+  padding: 5px 10px;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.won-auction-details {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.won-auction-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.won-auction-details dt {
+  color: #64748b;
+}
+
+.won-auction-details dd {
+  margin: 0;
+  color: #1e293b;
+  font-weight: 600;
+  text-align: right;
+}
+
+.won-auction-link {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.won-auction-link:hover {
+  text-decoration: underline;
+}
+
+.won-auctions-empty,
+.won-auctions-error {
+  padding: 42px 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.won-auctions-empty h2,
+.won-auctions-error h1 {
+  margin-top: 0;
+}
+
+.won-auctions-empty p {
+  margin: 0 0 22px;
+  color: #64748b;
+}
+
+.browse-auctions-link,
+.won-auctions-primary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  color: #ffffff;
+  background: #2563eb;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.browse-auctions-link:hover,
+.won-auctions-primary-link:hover {
+  background: #1d4ed8;
+}
+
+.won-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 30px;
+}
+
+.won-pagination button {
+  padding: 9px 15px;
+  color: #ffffff;
+  background: #2563eb;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.won-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.won-pagination span {
+  color: #475569;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .won-auctions-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .browse-auctions-link {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

@@ -41,3 +41,21 @@ export interface AuctionDetails {
   winningBidId: string | null;
   winnerName: string | null;
 }
+
+export interface WonAuction {
+  auctionId: string;
+  title: string;
+  winningAmount: number | null;
+  winningBidId: string | null;
+  endedAt: string;
+}
+
+export interface WonAuctionPage {
+  content: WonAuction[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}

@@ -2,6 +2,7 @@ import apiClient from "./apiClient";
 import type {
   AuctionDetails,
   AuctionPage,
+  WonAuctionPage,
 } from "../types/auction";
 
 export async function getAuctions(): Promise<AuctionPage> {
@@ -18,6 +19,24 @@ export async function getAuctionDetails(
   const response = await apiClient.get<AuctionDetails>(
     `/api/auctions/${auctionId}`,
   );
+
+  return response.data;
+}
+
+export async function getWonAuctions(
+  page = 0,
+  size = 20,
+): Promise<WonAuctionPage> {
+  const response =
+    await apiClient.get<WonAuctionPage>(
+      "/api/users/me/won-auctions",
+      {
+        params: {
+          page,
+          size,
+        },
+      },
+    );
 
   return response.data;
 }

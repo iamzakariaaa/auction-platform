@@ -12,6 +12,7 @@ import AuctionsPage from "./pages/AuctionsPage";
 import LoginPage from "./pages/LoginPage";
 import MyBidsPage from "./pages/MyBidsPage";
 import RegisterPage from "./pages/RegisterPage";
+import WonAuctionsPage from "./pages/WonAuctionsPage";
 
 function App() {
   return (
@@ -34,6 +35,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyBidsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/won-auctions"
+              element={
+                <ProtectedRoute>
+                  <WonAuctionsPage />
                 </ProtectedRoute>
               }
             />

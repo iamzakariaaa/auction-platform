@@ -42,7 +42,12 @@ function MainLayout() {
               >
                 My Bids
               </Link>
-
+              <Link
+                className="navlink"
+                to="/won-auctions"
+              >
+                Won Auctions
+              </Link>
               <span className="nav-user">
                 {user.firstName} {user.lastName}
               </span>
