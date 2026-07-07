@@ -51,7 +51,7 @@ function MainLayout() {
               {user.role === "ADMIN" && (
                 <Link
                   className="navlink"
-                  to="/admin/auctions"
+                  to="/admin"
                 >
                   Admin
                 </Link>
