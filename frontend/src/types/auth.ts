@@ -1,10 +1,13 @@
+export type UserRole =
+  | "ADMIN"
+  | "CUSTOMER";
+
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: "CUSTOMER" | "ADMIN";
-  enabled: boolean;
+  role: UserRole;
 }
 
 export interface LoginRequest {

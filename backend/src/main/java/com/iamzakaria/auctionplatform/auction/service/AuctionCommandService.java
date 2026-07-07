@@ -5,6 +5,7 @@ import com.iamzakaria.auctionplatform.auction.dto.CreateAuctionRequest;
 import com.iamzakaria.auctionplatform.auction.dto.UpdateAuctionRequest;
 import com.iamzakaria.auctionplatform.auction.entity.Auction;
 import com.iamzakaria.auctionplatform.auction.entity.AuctionStatus;
+import com.iamzakaria.auctionplatform.auction.exception.AuctionCannotBeCancelledException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotEditableException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException;
 import com.iamzakaria.auctionplatform.auction.exception.InvalidAuctionScheduleException;
@@ -167,6 +168,43 @@ public class AuctionCommandService {
         if (!endTime.isAfter(startTime)) {
             throw new InvalidAuctionScheduleException(
                     "End time must be after start time."
+            );
+        }
+    }
+
+    @Transactional
+    public AuctionResponse cancel(UUID auctionId) {
+        Auction auction = auctionRepository
+                .findByIdForUpdate(auctionId)
+                .orElseThrow(
+                        () -> new AuctionNotFoundException(
+                                auctionId
+                        )
+                );
+
+        Instant now = Instant.now(clock);
+
+        validateCancellable(auction, now);
+
+        auction.setStatus(AuctionStatus.CANCELLED);
+        auction.setUpdatedAt(now);
+
+        return AuctionMapper.toResponse(auction);
+    }
+    private void validateCancellable(
+            Auction auction,
+            Instant now
+    ) {
+        boolean cancellableStatus =
+                auction.getStatus() == AuctionStatus.SCHEDULED
+                        || auction.getStatus() == AuctionStatus.ACTIVE;
+
+        boolean hasNotEnded =
+                now.isBefore(auction.getEndTime());
+
+        if (!cancellableStatus || !hasNotEnded) {
+            throw new AuctionCannotBeCancelledException(
+                    auction.getId()
             );
         }
     }

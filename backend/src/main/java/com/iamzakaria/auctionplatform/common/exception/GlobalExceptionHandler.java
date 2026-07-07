@@ -1,5 +1,6 @@
 package com.iamzakaria.auctionplatform.common.exception;
 
+import com.iamzakaria.auctionplatform.auction.exception.AuctionCannotBeCancelledException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotEditableException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException;
 import com.iamzakaria.auctionplatform.auction.exception.InvalidAuctionScheduleException;
@@ -110,7 +111,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             InvalidAuctionScheduleException.class,
-            AuctionNotEditableException.class
+            AuctionNotEditableException.class,
+            AuctionCannotBeCancelledException.class
     })
     public ResponseEntity<ApiError> handleBusinessRule(
             RuntimeException exception,
@@ -165,6 +167,7 @@ public class GlobalExceptionHandler {
                 Map.of()
         );
     }
+
     private ResponseEntity<ApiError> buildError(
             HttpStatus status,
             String code,

@@ -9,21 +9,19 @@ import { getMyBids } from "../api/bidApi";
 import type { UserBidResponse } from "../types/bid";
 import "./MyBidsPage.css";
 
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat("en-CA", {
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat("en-MA", {
     style: "currency",
-    currency: "CAD",
-  }).format(amount);
+    currency: "MAD",
+  }).format(value);
 }
-
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString(
-    "en-CA",
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-    },
-  );
+  return new Date(value).toLocaleString("en-MA", {
+    timeZone: "Africa/Casablanca",
+    dateStyle: "medium",
+    timeStyle: "short",
+    hour12: false,
+  });
 }
 
 function MyBidsPage() {

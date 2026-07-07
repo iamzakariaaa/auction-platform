@@ -227,20 +227,19 @@ function AuctionDetailsPage() {
 
         <dt>Starting price</dt>
         <dd>
-          ${auction.startingPrice.toFixed(2)}
+          {auction.startingPrice.toFixed(2)} MAD
         </dd>
 
         <dt>Current price</dt>
         <dd>
-          ${auction.currentPrice.toFixed(2)}
+          {auction.currentPrice.toFixed(2)} MAD
         </dd>
 
         <dt>Minimum increment</dt>
         <dd>
-          $
           {auction.minimumBidIncrement.toFixed(
             2,
-          )}
+          )} MAD
         </dd>
 
         <dt>Bid count</dt>
@@ -306,8 +305,8 @@ function AuctionDetailsPage() {
             />
 
             <p className="minimum-bid">
-              Minimum next bid: $
-              {minimumNextBid.toFixed(2)}
+              Minimum next bid: 
+              {minimumNextBid.toFixed(2)} MAD
             </p>
 
             <button

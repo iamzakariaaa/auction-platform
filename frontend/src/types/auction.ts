@@ -59,3 +59,26 @@ export interface WonAuctionPage {
   first: boolean;
   last: boolean;
 }
+
+export interface AuctionResponse {
+  id: string;
+  title: string;
+  description: string;
+  startingPrice: number;
+  currentPrice: number;
+  minimumBidIncrement: number;
+  status: AuctionStatus;
+  startTime: string;
+  endTime: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface AuctionFormRequest {
+  title: string;
+  description: string;
+  startingPrice: number;
+  minimumBidIncrement: number;
+  startTime: string;
+  endTime: string;
+}

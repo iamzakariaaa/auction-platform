@@ -13,6 +13,9 @@ import LoginPage from "./pages/LoginPage";
 import MyBidsPage from "./pages/MyBidsPage";
 import RegisterPage from "./pages/RegisterPage";
 import WonAuctionsPage from "./pages/WonAuctionsPage";
+import AdminRoute from "./components/AdminRoute";
+import AdminAuctionsPage from "./pages/AdminAuctionsPage";
+import AuctionFormPage from "./pages/AuctionFormPage";
 
 function App() {
   return (
@@ -47,7 +50,32 @@ function App() {
               }
             />
           </Route>
+          <Route
+            path="/admin/auctions"
+            element={
+              <AdminRoute>
+                <AdminAuctionsPage />
+              </AdminRoute>
+            }
+          />
 
+          <Route
+            path="/admin/auctions/new"
+            element={
+              <AdminRoute>
+                <AuctionFormPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/auctions/:auctionId/edit"
+            element={
+              <AdminRoute>
+                <AuctionFormPage />
+              </AdminRoute>
+            }
+          />
           <Route
             path="/login"
             element={<LoginPage />}

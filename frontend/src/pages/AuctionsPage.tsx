@@ -70,7 +70,7 @@ function AuctionsPage() {
               <p>
                 Current price:{" "}
                 <strong>
-                  ${auction.currentPrice}
+                  {auction.currentPrice} MAD
                 </strong>
               </p>
 

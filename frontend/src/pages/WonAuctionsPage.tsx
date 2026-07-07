@@ -18,22 +18,21 @@ function formatMoney(
     return "Not available";
   }
 
-  return new Intl.NumberFormat("en-CA", {
+  return new Intl.NumberFormat("en-MA", {
     style: "currency",
-    currency: "CAD",
+    currency: "MAD",
   }).format(amount);
+
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString(
-    "en-CA",
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-    },
-  );
+  return new Date(value).toLocaleString("en-MA", {
+    timeZone: "Africa/Casablanca",
+    dateStyle: "medium",
+    timeStyle: "short",
+    hour12: false,
+  });
 }
-
 function WonAuctionsPage() {
   const [auctions, setAuctions] = useState<
     WonAuction[]

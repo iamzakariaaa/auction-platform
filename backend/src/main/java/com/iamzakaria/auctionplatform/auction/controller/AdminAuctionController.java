@@ -41,6 +41,13 @@ public class AdminAuctionController {
         return commandService.update(auctionId, request);
     }
 
+    @PatchMapping("/{auctionId}/cancel")
+    public AuctionResponse cancel(
+            @PathVariable UUID auctionId
+    ) {
+        return commandService.cancel(auctionId);
+    }
+
     @DeleteMapping("/{auctionId}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID auctionId

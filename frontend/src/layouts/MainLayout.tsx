@@ -48,6 +48,14 @@ function MainLayout() {
               >
                 Won Auctions
               </Link>
+              {user.role === "ADMIN" && (
+                <Link
+                  className="navlink"
+                  to="/admin/auctions"
+                >
+                  Admin
+                </Link>
+              )}
               <span className="nav-user">
                 {user.firstName} {user.lastName}
               </span>

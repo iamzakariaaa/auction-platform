@@ -1,0 +1,157 @@
+.auction-form-page {
+  padding: 32px 0 56px;
+}
+
+.auction-form-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.auction-form-page-header h1 {
+  margin: 4px 0 8px;
+  color: #111827;
+  font-size: 2rem;
+}
+
+.auction-form-page-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.auction-editor {
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow:
+    0 5px 18px rgb(15 23 42 / 5%);
+}
+
+.auction-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.auction-form-full {
+  grid-column: 1 / -1;
+}
+
+.auction-form-field {
+  display: grid;
+  gap: 8px;
+}
+
+.auction-form-field label {
+  color: #374151;
+  font-weight: 600;
+}
+
+.auction-form input,
+.auction-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.auction-form textarea {
+  resize: vertical;
+}
+
+.auction-form input:focus,
+.auction-form textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow:
+    0 0 0 3px rgb(37 99 235 / 14%);
+}
+
+.auction-form input:disabled,
+.auction-form textarea:disabled {
+  cursor: not-allowed;
+  background: #f1f5f9;
+}
+
+.auction-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 7px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-button {
+  color: #ffffff;
+  background: #2563eb;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.secondary-button {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.admin-message {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.admin-error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+@media (max-width: 700px) {
+  .auction-form-page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .auction-form {
+    grid-template-columns: 1fr;
+  }
+
+  .auction-form-full {
+    grid-column: auto;
+  }
+
+  .auction-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .auction-form-actions a,
+  .auction-form-actions button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
