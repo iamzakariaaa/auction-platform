@@ -82,3 +82,12 @@ export interface AuctionFormRequest {
   startTime: string;
   endTime: string;
 }
+
+export interface AdminDashboardResponse {
+  totalAuctions: number;
+  scheduledAuctions: number;
+  activeAuctions: number;
+  endedAuctions: number;
+  cancelledAuctions: number;
+  recentAuctions: AuctionSummary[];
+}

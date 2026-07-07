@@ -1,5 +1,6 @@
 import apiClient from "./apiClient";
 import type {
+  AdminDashboardResponse,
   AuctionDetails,
   AuctionFormRequest,
   AuctionPage,
@@ -104,4 +105,14 @@ export async function deleteAuction(
   await apiClient.delete(
     `/api/admin/auctions/${auctionId}`,
   );
+}
+
+export async function getAdminDashboard():
+Promise<AdminDashboardResponse> {
+  const response =
+    await apiClient.get<AdminDashboardResponse>(
+      "/api/admin/dashboard",
+    );
+
+  return response.data;
 }

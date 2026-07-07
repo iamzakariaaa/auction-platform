@@ -5,27 +5,13 @@ import {
 import axios from "axios";
 import { Link } from "react-router-dom";
 
-import { getAuctions } from "../api/auctionApi";
+import {
+  getAdminDashboard,
+} from "../api/auctionApi";
 import type {
-  AuctionSummary,
+  AdminDashboardResponse,
 } from "../types/auction";
 import "./AdminDashboardPage.css";
-
-interface DashboardCounts {
-  total: number;
-  scheduled: number;
-  active: number;
-  ended: number;
-  cancelled: number;
-}
-
-const INITIAL_COUNTS: DashboardCounts = {
-  total: 0,
-  scheduled: 0,
-  active: 0,
-  ended: 0,
-  cancelled: 0,
-};
 
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("en-MA", {
@@ -35,12 +21,15 @@ function formatMoney(value: number): string {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleString("en-MA", {
-    timeZone: "Africa/Casablanca",
-    dateStyle: "medium",
-    timeStyle: "short",
-    hour12: false,
-  });
+  return new Date(value).toLocaleString(
+    "en-MA",
+    {
+      timeZone: "Africa/Casablanca",
+      dateStyle: "medium",
+      timeStyle: "short",
+      hour12: false,
+    },
+  );
 }
 
 function getErrorMessage(
@@ -64,11 +53,10 @@ function getErrorMessage(
 }
 
 function AdminDashboardPage() {
-  const [counts, setCounts] =
-    useState<DashboardCounts>(INITIAL_COUNTS);
-
-  const [recentAuctions, setRecentAuctions] =
-    useState<AuctionSummary[]>([]);
+  const [dashboard, setDashboard] =
+    useState<AdminDashboardResponse | null>(
+      null,
+    );
 
   const [loading, setLoading] =
     useState(true);
@@ -82,57 +70,10 @@ function AdminDashboardPage() {
         setLoading(true);
         setErrorMessage("");
 
-        const [
-          allResponse,
-          scheduledResponse,
-          activeResponse,
-          endedResponse,
-          cancelledResponse,
-          recentResponse,
-        ] = await Promise.all([
-          getAuctions({
-            page: 0,
-            size: 1,
-          }),
-          getAuctions({
-            page: 0,
-            size: 1,
-            status: "SCHEDULED",
-          }),
-          getAuctions({
-            page: 0,
-            size: 1,
-            status: "ACTIVE",
-          }),
-          getAuctions({
-            page: 0,
-            size: 1,
-            status: "ENDED",
-          }),
-          getAuctions({
-            page: 0,
-            size: 1,
-            status: "CANCELLED",
-          }),
-          getAuctions({
-            page: 0,
-            size: 5,
-          }),
-        ]);
+        const response =
+          await getAdminDashboard();
 
-        setCounts({
-          total: allResponse.totalElements,
-          scheduled:
-            scheduledResponse.totalElements,
-          active: activeResponse.totalElements,
-          ended: endedResponse.totalElements,
-          cancelled:
-            cancelledResponse.totalElements,
-        });
-
-        setRecentAuctions(
-          recentResponse.content,
-        );
+        setDashboard(response);
       } catch (error) {
         setErrorMessage(
           getErrorMessage(
@@ -153,6 +94,20 @@ function AdminDashboardPage() {
       <section className="admin-dashboard-page">
         <p className="dashboard-loading">
           Loading dashboard...
+        </p>
+      </section>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <section className="admin-dashboard-page">
+        <p
+          className="dashboard-error"
+          role="alert"
+        >
+          {errorMessage ||
+            "Dashboard could not be loaded."}
         </p>
       </section>
     );
@@ -206,7 +161,10 @@ function AdminDashboardPage() {
       >
         <article className="dashboard-stat-card">
           <span>Total auctions</span>
-          <strong>{counts.total}</strong>
+
+          <strong>
+            {dashboard.totalAuctions}
+          </strong>
 
           <Link to="/admin/auctions">
             View all
@@ -215,7 +173,10 @@ function AdminDashboardPage() {
 
         <article className="dashboard-stat-card">
           <span>Scheduled</span>
-          <strong>{counts.scheduled}</strong>
+
+          <strong>
+            {dashboard.scheduledAuctions}
+          </strong>
 
           <Link to="/admin/auctions">
             View scheduled
@@ -224,7 +185,10 @@ function AdminDashboardPage() {
 
         <article className="dashboard-stat-card">
           <span>Active</span>
-          <strong>{counts.active}</strong>
+
+          <strong>
+            {dashboard.activeAuctions}
+          </strong>
 
           <Link to="/admin/auctions">
             View active
@@ -233,7 +197,10 @@ function AdminDashboardPage() {
 
         <article className="dashboard-stat-card">
           <span>Ended</span>
-          <strong>{counts.ended}</strong>
+
+          <strong>
+            {dashboard.endedAuctions}
+          </strong>
 
           <Link to="/admin/auctions">
             View ended
@@ -242,7 +209,10 @@ function AdminDashboardPage() {
 
         <article className="dashboard-stat-card">
           <span>Cancelled</span>
-          <strong>{counts.cancelled}</strong>
+
+          <strong>
+            {dashboard.cancelledAuctions}
+          </strong>
 
           <Link to="/admin/auctions">
             View cancelled
@@ -266,7 +236,8 @@ function AdminDashboardPage() {
           </Link>
         </div>
 
-        {recentAuctions.length === 0 ? (
+        {dashboard.recentAuctions.length ===
+        0 ? (
           <div className="dashboard-empty">
             No auctions have been created yet.
           </div>
@@ -285,57 +256,59 @@ function AdminDashboardPage() {
               </thead>
 
               <tbody>
-                {recentAuctions.map((auction) => (
-                  <tr key={auction.id}>
-                    <td>
-                      <strong>
-                        {auction.title}
-                      </strong>
-                    </td>
+                {dashboard.recentAuctions.map(
+                  (auction) => (
+                    <tr key={auction.id}>
+                      <td>
+                        <strong>
+                          {auction.title}
+                        </strong>
+                      </td>
 
-                    <td>
-                      <span
-                        className={`dashboard-status dashboard-status-${auction.status.toLowerCase()}`}
-                      >
-                        {auction.status}
-                      </span>
-                    </td>
-
-                    <td>
-                      {formatMoney(
-                        auction.currentPrice,
-                      )}
-                    </td>
-
-                    <td>
-                      {formatDate(
-                        auction.startTime,
-                      )}
-                    </td>
-
-                    <td>
-                      {formatDate(
-                        auction.endTime,
-                      )}
-                    </td>
-
-                    <td>
-                      <div className="dashboard-table-actions">
-                        <Link
-                          to={`/auctions/${auction.id}`}
+                      <td>
+                        <span
+                          className={`dashboard-status dashboard-status-${auction.status.toLowerCase()}`}
                         >
-                          View
-                        </Link>
+                          {auction.status}
+                        </span>
+                      </td>
 
-                        <Link
-                          to={`/admin/auctions/${auction.id}/bids`}
-                        >
-                          Bids
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      <td>
+                        {formatMoney(
+                          auction.currentPrice,
+                        )}
+                      </td>
+
+                      <td>
+                        {formatDate(
+                          auction.startTime,
+                        )}
+                      </td>
+
+                      <td>
+                        {formatDate(
+                          auction.endTime,
+                        )}
+                      </td>
+
+                      <td>
+                        <div className="dashboard-table-actions">
+                          <Link
+                            to={`/auctions/${auction.id}`}
+                          >
+                            View
+                          </Link>
+
+                          <Link
+                            to={`/admin/auctions/${auction.id}/bids`}
+                          >
+                            Bids
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ),
+                )}
               </tbody>
             </table>
           </div>

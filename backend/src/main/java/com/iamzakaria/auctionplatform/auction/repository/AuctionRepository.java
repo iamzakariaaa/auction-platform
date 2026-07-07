@@ -3,6 +3,7 @@ package com.iamzakaria.auctionplatform.auction.repository;
 import com.iamzakaria.auctionplatform.auction.entity.Auction;
 import com.iamzakaria.auctionplatform.auction.entity.AuctionStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -66,5 +67,11 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
     Page<Auction> findByStatus(
             AuctionStatus status,
             Pageable pageable
+    );
+
+    long countByStatus(AuctionStatus status);
+
+    List<Auction> findAllByOrderByCreatedAtDesc(
+            Limit limit
     );
 }
