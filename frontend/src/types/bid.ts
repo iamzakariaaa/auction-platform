@@ -19,3 +19,20 @@ export interface BidPlacedMessage {
   bidCount: number;
   placedAt: string;
 }
+
+export interface UserBidResponse {
+  bidId: string;
+  auctionId: string;
+  auctionTitle: string;
+  bidAmount: number;
+  currentPrice: number;
+  leading: boolean;
+  auctionStatus:
+    | "DRAFT"
+    | "SCHEDULED"
+    | "ACTIVE"
+    | "ENDED"
+    | "CANCELLED";
+  auctionEndTime: string;
+  createdAt: string;
+}

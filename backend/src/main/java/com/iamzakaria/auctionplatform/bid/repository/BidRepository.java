@@ -10,19 +10,29 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface BidRepository extends JpaRepository<Bid, UUID> {
+public interface BidRepository
+        extends JpaRepository<Bid, UUID> {
 
-    Optional<Bid> findTopByAuctionIdOrderByAmountDescCreatedAtAsc(
+    Optional<Bid>
+    findTopByAuctionIdOrderByAmountDescCreatedAtAsc(
             UUID auctionId
     );
 
-    List<Bid> findByAuctionIdOrderByAmountDescCreatedAtAsc(
+    List<Bid>
+    findByAuctionIdOrderByAmountDescCreatedAtAsc(
             UUID auctionId,
             Pageable pageable
     );
 
-    List<Bid> findByBidderIdOrderByCreatedAtDesc(
-            UUID bidderId,
+    @Query("""
+        SELECT bid
+        FROM Bid bid
+        JOIN FETCH bid.auction auction
+        WHERE bid.bidder.id = :bidderId
+        ORDER BY bid.createdAt DESC
+        """)
+    List<Bid> findUserBidsWithAuction(
+            @Param("bidderId") UUID bidderId,
             Pageable pageable
     );
 

@@ -2,6 +2,7 @@ import apiClient from "./apiClient";
 import type {
   BidResponse,
   PlaceBidRequest,
+  UserBidResponse,
 } from "../types/bid";
 
 export async function placeBid(
@@ -12,6 +13,20 @@ export async function placeBid(
     `/api/auctions/${auctionId}/bids`,
     request,
   );
+
+  return response.data;
+}
+
+export async function getMyBids(
+  limit = 20,
+): Promise<UserBidResponse[]> {
+  const response = await apiClient.get<
+    UserBidResponse[]
+  >("/api/users/me/bids", {
+    params: {
+      limit,
+    },
+  });
 
   return response.data;
 }

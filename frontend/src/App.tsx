@@ -4,11 +4,13 @@ import {
   Routes,
 } from "react-router-dom";
 
+import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 import AuctionDetailsPage from "./pages/AuctionDetailsPage";
 import AuctionsPage from "./pages/AuctionsPage";
 import LoginPage from "./pages/LoginPage";
+import MyBidsPage from "./pages/MyBidsPage";
 import RegisterPage from "./pages/RegisterPage";
 
 function App() {
@@ -25,6 +27,15 @@ function App() {
             <Route
               path="/auctions/:auctionId"
               element={<AuctionDetailsPage />}
+            />
+
+            <Route
+              path="/my-bids"
+              element={
+                <ProtectedRoute>
+                  <MyBidsPage />
+                </ProtectedRoute>
+              }
             />
           </Route>
 

@@ -6,7 +6,9 @@ import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException
 import com.iamzakaria.auctionplatform.auction.repository.AuctionRepository;
 import com.iamzakaria.auctionplatform.bid.dto.BidResponse;
 import com.iamzakaria.auctionplatform.bid.dto.PlaceBidRequest;
+import com.iamzakaria.auctionplatform.bid.dto.UserBidResponse;
 import com.iamzakaria.auctionplatform.bid.entity.Bid;
+import com.iamzakaria.auctionplatform.bid.event.BidPlacedEvent;
 import com.iamzakaria.auctionplatform.bid.exception.AuctionNotActiveException;
 import com.iamzakaria.auctionplatform.bid.exception.BidTooLowException;
 import com.iamzakaria.auctionplatform.bid.exception.SelfOutbidException;
@@ -15,6 +17,7 @@ import com.iamzakaria.auctionplatform.bid.repository.BidRepository;
 import com.iamzakaria.auctionplatform.user.entity.User;
 import com.iamzakaria.auctionplatform.user.exception.UserNotFoundException;
 import com.iamzakaria.auctionplatform.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ public class BidService {
 
     private final BidRepository bidRepository;
     private final AuctionRepository auctionRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final UserRepository userRepository;
     private final Clock clock;
 
@@ -37,12 +41,14 @@ public class BidService {
             BidRepository bidRepository,
             AuctionRepository auctionRepository,
             UserRepository userRepository,
-            Clock clock
+            Clock clock,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.bidRepository = bidRepository;
         this.auctionRepository = auctionRepository;
         this.userRepository = userRepository;
         this.clock = clock;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -99,6 +105,10 @@ public class BidService {
 
         Bid savedBid = bidRepository.save(bid);
 
+        eventPublisher.publishEvent(
+                new BidPlacedEvent(savedBid.getId())
+        );
+
         return BidMapper.toResponse(savedBid);
     }
 
@@ -124,7 +134,7 @@ public class BidService {
     }
 
     @Transactional(readOnly = true)
-    public List<BidResponse> getUserBids(
+    public List<UserBidResponse> getUserBids(
             UUID bidderId,
             int limit
     ) {
@@ -135,12 +145,12 @@ public class BidService {
         int safeLimit = normalizeLimit(limit);
 
         return bidRepository
-                .findByBidderIdOrderByCreatedAtDesc(
+                .findUserBidsWithAuction(
                         bidderId,
                         PageRequest.of(0, safeLimit)
                 )
                 .stream()
-                .map(BidMapper::toResponse)
+                .map(BidMapper::toUserBidResponse)
                 .toList();
     }
 

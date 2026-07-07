@@ -32,8 +32,13 @@ public class AuctionCommandService {
     }
 
     @Transactional
-    public AuctionResponse create(CreateAuctionRequest request) {
-        validateSchedule(request.startTime(), request.endTime());
+    public AuctionResponse create(
+            CreateAuctionRequest request
+    ) {
+        validateSchedule(
+                request.startTime(),
+                request.endTime()
+        );
 
         Instant now = Instant.now(clock);
 
@@ -42,14 +47,23 @@ public class AuctionCommandService {
         auction.setDescription(request.description().trim());
         auction.setStartingPrice(request.startingPrice());
         auction.setCurrentPrice(request.startingPrice());
-        auction.setMinimumBidIncrement(request.minimumBidIncrement());
-        auction.setStatus(AuctionStatus.DRAFT);
+        auction.setMinimumBidIncrement(
+                request.minimumBidIncrement()
+        );
+        auction.setStatus(
+                determineStatus(
+                        request.startTime(),
+                        request.endTime(),
+                        now
+                )
+        );
         auction.setStartTime(request.startTime());
         auction.setEndTime(request.endTime());
         auction.setCreatedAt(now);
         auction.setUpdatedAt(now);
 
-        Auction savedAuction = auctionRepository.save(auction);
+        Auction savedAuction =
+                auctionRepository.save(auction);
 
         return AuctionMapper.toResponse(savedAuction);
     }
@@ -59,22 +73,33 @@ public class AuctionCommandService {
             UUID auctionId,
             UpdateAuctionRequest request
     ) {
-        validateSchedule(request.startTime(), request.endTime());
+        validateSchedule(
+                request.startTime(),
+                request.endTime()
+        );
 
         Auction auction = getAuction(auctionId);
+        Instant now = Instant.now(clock);
 
-        if (auction.getStatus() != AuctionStatus.DRAFT) {
-            throw new AuctionNotEditableException(auctionId);
-        }
+        validateEditable(auction, now);
 
         auction.setTitle(request.title().trim());
         auction.setDescription(request.description().trim());
         auction.setStartingPrice(request.startingPrice());
         auction.setCurrentPrice(request.startingPrice());
-        auction.setMinimumBidIncrement(request.minimumBidIncrement());
+        auction.setMinimumBidIncrement(
+                request.minimumBidIncrement()
+        );
         auction.setStartTime(request.startTime());
         auction.setEndTime(request.endTime());
-        auction.setUpdatedAt(Instant.now(clock));
+        auction.setStatus(
+                determineStatus(
+                        request.startTime(),
+                        request.endTime(),
+                        now
+                )
+        );
+        auction.setUpdatedAt(now);
 
         return AuctionMapper.toResponse(auction);
     }
@@ -82,17 +107,57 @@ public class AuctionCommandService {
     @Transactional
     public void delete(UUID auctionId) {
         Auction auction = getAuction(auctionId);
+        Instant now = Instant.now(clock);
 
-        if (auction.getStatus() != AuctionStatus.DRAFT) {
-            throw new AuctionNotEditableException(auctionId);
-        }
+        validateEditable(auction, now);
 
         auctionRepository.delete(auction);
     }
 
     private Auction getAuction(UUID auctionId) {
-        return auctionRepository.findById(auctionId)
-                .orElseThrow(() -> new AuctionNotFoundException(auctionId));
+        return auctionRepository
+                .findById(auctionId)
+                .orElseThrow(
+                        () -> new AuctionNotFoundException(
+                                auctionId
+                        )
+                );
+    }
+
+    private AuctionStatus determineStatus(
+            Instant startTime,
+            Instant endTime,
+            Instant now
+    ) {
+        if (!endTime.isAfter(now)) {
+            return AuctionStatus.ENDED;
+        }
+
+        if (!startTime.isAfter(now)) {
+            return AuctionStatus.ACTIVE;
+        }
+
+        return AuctionStatus.SCHEDULED;
+    }
+
+    private void validateEditable(
+            Auction auction,
+            Instant now
+    ) {
+        boolean draft =
+                auction.getStatus() == AuctionStatus.DRAFT;
+
+        boolean scheduledAndNotStarted =
+                auction.getStatus() == AuctionStatus.SCHEDULED
+                        && now.isBefore(
+                        auction.getStartTime()
+                );
+
+        if (!draft && !scheduledAndNotStarted) {
+            throw new AuctionNotEditableException(
+                    auction.getId()
+            );
+        }
     }
 
     private void validateSchedule(

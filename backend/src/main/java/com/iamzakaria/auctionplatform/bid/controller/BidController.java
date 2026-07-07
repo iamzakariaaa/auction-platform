@@ -2,6 +2,7 @@ package com.iamzakaria.auctionplatform.bid.controller;
 
 import com.iamzakaria.auctionplatform.bid.dto.BidResponse;
 import com.iamzakaria.auctionplatform.bid.dto.PlaceBidRequest;
+import com.iamzakaria.auctionplatform.bid.dto.UserBidResponse;
 import com.iamzakaria.auctionplatform.bid.service.BidService;
 import com.iamzakaria.auctionplatform.security.SecurityUser;
 import jakarta.validation.Valid;
@@ -53,11 +54,12 @@ public class BidController {
     }
 
     @GetMapping("/users/me/bids")
-    public ResponseEntity<List<BidResponse>> getMyBids(
+    public ResponseEntity<List<UserBidResponse>> getMyBids(
             @RequestParam(defaultValue = "20") int limit,
             Authentication authentication
     ) {
-        SecurityUser securityUser = getSecurityUser(authentication);
+        SecurityUser securityUser =
+                getSecurityUser(authentication);
 
         return ResponseEntity.ok(
                 bidService.getUserBids(

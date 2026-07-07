@@ -36,6 +36,13 @@ function MainLayout() {
 
           {!loading && authenticated && user ? (
             <>
+              <Link
+                className="navlink"
+                to="/my-bids"
+              >
+                My Bids
+              </Link>
+
               <span className="nav-user">
                 {user.firstName} {user.lastName}
               </span>
