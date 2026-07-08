@@ -71,6 +71,28 @@ public class AuctionQueryService {
     }
 
     @Transactional(readOnly = true)
+    public Page<AuctionSummaryResponse> searchAuctions(
+            String search,
+            AuctionStatus status,
+            BigDecimal minimumPrice,
+            BigDecimal maximumPrice,
+            Pageable pageable
+    ) {
+        String normalizedSearch =
+                normalizeSearch(search);
+
+        return auctionRepository
+                .searchAuctions(
+                        normalizedSearch,
+                        status,
+                        minimumPrice,
+                        maximumPrice,
+                        pageable
+                )
+                .map(AuctionMapper::toSummary);
+    }
+
+    @Transactional(readOnly = true)
     public AuctionDetailsResponse getAuctionDetails(
             UUID auctionId
     ) {
@@ -213,5 +235,13 @@ public class AuctionQueryService {
                 winningBidId,
                 auction.getEndTime()
         );
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null || search.isBlank()) {
+            return "";
+        }
+
+        return search.trim();
     }
 }

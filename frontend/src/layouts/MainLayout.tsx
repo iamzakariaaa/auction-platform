@@ -1,6 +1,12 @@
 import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
   Link,
   Outlet,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -9,6 +15,14 @@ import "./MainLayout.css";
 
 function MainLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const accountMenuRef =
+    useRef<HTMLDivElement | null>(null);
+
+  const [
+    accountMenuOpen,
+    setAccountMenuOpen,
+  ] = useState(false);
 
   const {
     user,
@@ -17,10 +31,68 @@ function MainLayout() {
     logout,
   } = useAuth();
 
+  useEffect(() => {
+    setAccountMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    function handleOutsideClick(
+      event: MouseEvent,
+    ) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(
+          event.target as Node,
+        )
+      ) {
+        setAccountMenuOpen(false);
+      }
+    }
+
+    function handleEscape(
+      event: KeyboardEvent,
+    ) {
+      if (event.key === "Escape") {
+        setAccountMenuOpen(false);
+      }
+    }
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick,
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleEscape,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick,
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape,
+      );
+    };
+  }, []);
+
   function handleLogout() {
+    setAccountMenuOpen(false);
     logout();
     navigate("/");
   }
+
+  function toggleAccountMenu() {
+    setAccountMenuOpen((current) => !current);
+  }
+
+  const displayName = user
+    ? `${user.firstName} ${user.lastName}`
+    : "My Account";
 
   return (
     <>
@@ -29,49 +101,99 @@ function MainLayout() {
           Auction Platform
         </Link>
 
-        <nav>
+        <nav className="main-navigation">
           <Link className="navlink" to="/">
             Auctions
           </Link>
 
-          {!loading && authenticated && user ? (
-            <>
-              <Link
-                className="navlink"
-                to="/my-bids"
-              >
-                My Bids
-              </Link>
-              <Link
-                className="navlink"
-                to="/won-auctions"
-              >
-                Won Auctions
-              </Link>
-              {user.role === "ADMIN" && (
-                <Link
-                  className="navlink"
-                  to="/admin"
-                >
-                  Admin
-                </Link>
-              )}
-              <span className="nav-user">
-                {user.firstName} {user.lastName}
-              </span>
-
+          {!loading &&
+          authenticated &&
+          user ? (
+            <div
+              className="account-menu"
+              ref={accountMenuRef}
+            >
               <button
-                className="link-button"
+                className="account-menu-button"
                 type="button"
-                onClick={handleLogout}
+                onClick={toggleAccountMenu}
+                aria-expanded={
+                  accountMenuOpen
+                }
+                aria-haspopup="menu"
               >
-                Logout
+                <span className="account-menu-name">
+                  {displayName}
+                </span>
+
+                <span
+                  className={`account-menu-arrow ${
+                    accountMenuOpen
+                      ? "account-menu-arrow-open"
+                      : ""
+                  }`}
+                  aria-hidden="true"
+                >
+                  ▾
+                </span>
               </button>
-            </>
+
+              {accountMenuOpen && (
+                <div
+                  className="account-dropdown"
+                  role="menu"
+                >
+                  <div className="account-dropdown-header">
+                    <strong>
+                      {displayName}
+                    </strong>
+
+                    <span>{user.role}</span>
+                  </div>
+
+                  <Link
+                    className="account-dropdown-link"
+                    to="/my-bids"
+                    role="menuitem"
+                  >
+                    My Bids
+                  </Link>
+
+                  <Link
+                    className="account-dropdown-link"
+                    to="/won-auctions"
+                    role="menuitem"
+                  >
+                    Won Auctions
+                  </Link>
+
+                  {user.role === "ADMIN" && (
+                    <Link
+                      className="account-dropdown-link"
+                      to="/admin"
+                      role="menuitem"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  )}
+
+                  <div className="account-dropdown-divider" />
+
+                  <button
+                    className="account-logout-button"
+                    type="button"
+                    onClick={handleLogout}
+                    role="menuitem"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : null}
 
           {!loading && !authenticated ? (
-            <>
+            <div className="guest-navigation">
               <Link
                 className="navlink"
                 to="/login"
@@ -80,12 +202,12 @@ function MainLayout() {
               </Link>
 
               <Link
-                className="navlink"
+                className="register-navlink"
                 to="/register"
               >
                 Register
               </Link>
-            </>
+            </div>
           ) : null}
         </nav>
       </header>

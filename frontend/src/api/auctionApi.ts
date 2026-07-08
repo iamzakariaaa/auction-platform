@@ -9,28 +9,79 @@ import type {
   WonAuctionPage,
 } from "../types/auction";
 
+export type AuctionSort =
+  | "NEWEST"
+  | "ENDING_SOON"
+  | "PRICE_LOW_TO_HIGH"
+  | "PRICE_HIGH_TO_LOW";
+
 interface GetAuctionsParameters {
   page?: number;
   size?: number;
+  search?: string;
   status?: AuctionStatus;
+  minimumPrice?: number;
+  maximumPrice?: number;
+  sort?: AuctionSort;
+}
+
+function getSortParameter(
+  sort: AuctionSort,
+): string {
+  switch (sort) {
+    case "ENDING_SOON":
+      return "endTime,asc";
+
+    case "PRICE_LOW_TO_HIGH":
+      return "currentPrice,asc";
+
+    case "PRICE_HIGH_TO_LOW":
+      return "currentPrice,desc";
+
+    case "NEWEST":
+    default:
+      return "createdAt,desc";
+  }
 }
 
 export async function getAuctions({
   page = 0,
   size = 12,
+  search,
   status,
+  minimumPrice,
+  maximumPrice,
+  sort = "NEWEST",
 }: GetAuctionsParameters = {}): Promise<AuctionPage> {
-  const response = await apiClient.get<AuctionPage>(
-    "/api/auctions",
-    {
-      params: {
-        page,
-        size,
-        sort: "createdAt,desc",
-        ...(status ? { status } : {}),
+  const normalizedSearch = search?.trim();
+
+  const response =
+    await apiClient.get<AuctionPage>(
+      "/api/auctions",
+      {
+        params: {
+          page,
+          size,
+          sort: getSortParameter(sort),
+
+          ...(normalizedSearch
+            ? { search: normalizedSearch }
+            : {}),
+
+          ...(status
+            ? { status }
+            : {}),
+
+          ...(minimumPrice !== undefined
+            ? { minimumPrice }
+            : {}),
+
+          ...(maximumPrice !== undefined
+            ? { maximumPrice }
+            : {}),
+        },
       },
-    },
-  );
+    );
 
   return response.data;
 }
@@ -38,9 +89,10 @@ export async function getAuctions({
 export async function getAuctionDetails(
   auctionId: string,
 ): Promise<AuctionDetails> {
-  const response = await apiClient.get<AuctionDetails>(
-    `/api/auctions/${auctionId}`,
-  );
+  const response =
+    await apiClient.get<AuctionDetails>(
+      `/api/auctions/${auctionId}`,
+    );
 
   return response.data;
 }

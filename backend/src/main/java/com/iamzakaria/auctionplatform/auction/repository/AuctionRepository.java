@@ -12,13 +12,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface AuctionRepository extends JpaRepository<Auction, UUID> {
+public interface AuctionRepository
+        extends JpaRepository<Auction, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
@@ -30,7 +32,6 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
             @Param("auctionId") UUID auctionId
     );
 
-    //This changes auctions status from SCHEDULED to ACTIVE
     @Modifying(clearAutomatically = true)
     @Query("""
             UPDATE Auction auction
@@ -41,9 +42,14 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
               AND auction.endTime > :now
             """)
     int activateScheduledAuctions(
-            @Param("scheduledStatus") AuctionStatus scheduledStatus,
-            @Param("activeStatus") AuctionStatus activeStatus,
-            @Param("now") Instant now
+            @Param("scheduledStatus")
+            AuctionStatus scheduledStatus,
+
+            @Param("activeStatus")
+            AuctionStatus activeStatus,
+
+            @Param("now")
+            Instant now
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -55,8 +61,11 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
         ORDER BY auction.endTime
         """)
     List<Auction> findExpiredAuctionsForUpdate(
-            @Param("statuses") Collection<AuctionStatus> statuses,
-            @Param("now") Instant now
+            @Param("statuses")
+            Collection<AuctionStatus> statuses,
+
+            @Param("now")
+            Instant now
     );
 
     Page<Auction> findByWinnerIdOrderByEndTimeDesc(
@@ -66,6 +75,47 @@ public interface AuctionRepository extends JpaRepository<Auction, UUID> {
 
     Page<Auction> findByStatus(
             AuctionStatus status,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT auction
+    FROM Auction auction
+    WHERE (
+        :search = ''
+        OR LOWER(auction.title)
+            LIKE CONCAT(
+                '%',
+                LOWER(:search),
+                '%'
+            )
+    )
+    AND (
+        :status IS NULL
+        OR auction.status = :status
+    )
+    AND (
+        :minimumPrice IS NULL
+        OR auction.currentPrice >= :minimumPrice
+    )
+    AND (
+        :maximumPrice IS NULL
+        OR auction.currentPrice <= :maximumPrice
+    )
+    """)
+    Page<Auction> searchAuctions(
+            @Param("search")
+            String search,
+
+            @Param("status")
+            AuctionStatus status,
+
+            @Param("minimumPrice")
+            BigDecimal minimumPrice,
+
+            @Param("maximumPrice")
+            BigDecimal maximumPrice,
+
             Pageable pageable
     );
 
