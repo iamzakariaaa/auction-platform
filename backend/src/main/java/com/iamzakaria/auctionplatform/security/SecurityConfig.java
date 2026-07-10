@@ -130,6 +130,11 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/auction-images/**"
+                        ).permitAll()
+
+                        .requestMatchers(
                                 "/api/users/me/**"
                         ).hasRole("CUSTOMER")
 

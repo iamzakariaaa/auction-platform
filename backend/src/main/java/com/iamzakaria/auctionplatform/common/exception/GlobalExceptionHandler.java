@@ -1,9 +1,6 @@
 package com.iamzakaria.auctionplatform.common.exception;
 
-import com.iamzakaria.auctionplatform.auction.exception.AuctionCannotBeCancelledException;
-import com.iamzakaria.auctionplatform.auction.exception.AuctionNotEditableException;
-import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException;
-import com.iamzakaria.auctionplatform.auction.exception.InvalidAuctionScheduleException;
+import com.iamzakaria.auctionplatform.auction.exception.*;
 import com.iamzakaria.auctionplatform.bid.exception.AuctionNotActiveException;
 import com.iamzakaria.auctionplatform.bid.exception.BidTooLowException;
 import com.iamzakaria.auctionplatform.bid.exception.SelfOutbidException;
@@ -16,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -122,6 +120,75 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 "INVALID_AUCTION_OPERATION",
                 exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler({
+            InvalidAuctionImageException.class,
+            AuctionImageLimitException.class
+    })
+    public ResponseEntity<ApiError>
+    handleInvalidAuctionImage(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_AUCTION_IMAGE",
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(
+            AuctionImageNotFoundException.class
+    )
+    public ResponseEntity<ApiError>
+    handleAuctionImageNotFound(
+            AuctionImageNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.NOT_FOUND,
+                "AUCTION_IMAGE_NOT_FOUND",
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(
+            AuctionImageStorageException.class
+    )
+    public ResponseEntity<ApiError>
+    handleAuctionImageStorageFailure(
+            AuctionImageStorageException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "AUCTION_IMAGE_STORAGE_FAILED",
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        );
+    }
+
+    @ExceptionHandler(
+            MaxUploadSizeExceededException.class
+    )
+    public ResponseEntity<ApiError>
+    handleMaximumUploadSize(
+            MaxUploadSizeExceededException exception,
+            HttpServletRequest request
+    ) {
+        return buildError(
+                HttpStatus.CONTENT_TOO_LARGE,
+                "IMAGE_TOO_LARGE",
+                "The image cannot be larger than 5 MB.",
                 request.getRequestURI(),
                 Map.of()
         );
