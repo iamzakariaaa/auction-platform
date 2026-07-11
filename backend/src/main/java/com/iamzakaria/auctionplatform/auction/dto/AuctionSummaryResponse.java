@@ -12,6 +12,7 @@ public record AuctionSummaryResponse(
         BigDecimal currentPrice,
         AuctionStatus status,
         Instant startTime,
-        Instant endTime
+        Instant endTime,
+        String primaryImageUrl
 ) {
 }

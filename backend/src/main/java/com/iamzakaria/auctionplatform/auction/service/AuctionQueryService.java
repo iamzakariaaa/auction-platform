@@ -1,13 +1,16 @@
 package com.iamzakaria.auctionplatform.auction.service;
 
 import com.iamzakaria.auctionplatform.auction.dto.AuctionDetailsResponse;
+import com.iamzakaria.auctionplatform.auction.dto.AuctionImageResponse;
 import com.iamzakaria.auctionplatform.auction.dto.AuctionResponse;
 import com.iamzakaria.auctionplatform.auction.dto.AuctionSummaryResponse;
 import com.iamzakaria.auctionplatform.auction.dto.WonAuctionResponse;
 import com.iamzakaria.auctionplatform.auction.entity.Auction;
+import com.iamzakaria.auctionplatform.auction.entity.AuctionImage;
 import com.iamzakaria.auctionplatform.auction.entity.AuctionStatus;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException;
 import com.iamzakaria.auctionplatform.auction.mapper.AuctionMapper;
+import com.iamzakaria.auctionplatform.auction.repository.AuctionImageRepository;
 import com.iamzakaria.auctionplatform.auction.repository.AuctionRepository;
 import com.iamzakaria.auctionplatform.bid.entity.Bid;
 import com.iamzakaria.auctionplatform.bid.repository.AuctionBidSummary;
@@ -22,21 +25,28 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class AuctionQueryService {
 
     private final AuctionRepository auctionRepository;
+    private final AuctionImageRepository imageRepository;
     private final BidRepository bidRepository;
     private final Clock clock;
 
     public AuctionQueryService(
             AuctionRepository auctionRepository,
+            AuctionImageRepository imageRepository,
             BidRepository bidRepository,
             Clock clock
     ) {
         this.auctionRepository = auctionRepository;
+        this.imageRepository = imageRepository;
         this.bidRepository = bidRepository;
         this.clock = clock;
     }
@@ -47,7 +57,10 @@ public class AuctionQueryService {
                 .findById(auctionId)
                 .map(AuctionMapper::toResponse)
                 .orElseThrow(
-                        () -> new AuctionNotFoundException(auctionId)
+                        () ->
+                                new AuctionNotFoundException(
+                                        auctionId
+                                )
                 );
     }
 
@@ -55,9 +68,9 @@ public class AuctionQueryService {
     public Page<AuctionSummaryResponse> getAll(
             Pageable pageable
     ) {
-        return auctionRepository
-                .findAll(pageable)
-                .map(AuctionMapper::toSummary);
+        return mapAuctionPage(
+                auctionRepository.findAll(pageable)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -65,9 +78,12 @@ public class AuctionQueryService {
             AuctionStatus status,
             Pageable pageable
     ) {
-        return auctionRepository
-                .findByStatus(status, pageable)
-                .map(AuctionMapper::toSummary);
+        return mapAuctionPage(
+                auctionRepository.findByStatus(
+                        status,
+                        pageable
+                )
+        );
     }
 
     @Transactional(readOnly = true)
@@ -81,15 +97,16 @@ public class AuctionQueryService {
         String normalizedSearch =
                 normalizeSearch(search);
 
-        return auctionRepository
-                .searchAuctions(
+        Page<Auction> auctions =
+                auctionRepository.searchAuctions(
                         normalizedSearch,
                         status,
                         minimumPrice,
                         maximumPrice,
                         pageable
-                )
-                .map(AuctionMapper::toSummary);
+                );
+
+        return mapAuctionPage(auctions);
     }
 
     @Transactional(readOnly = true)
@@ -99,11 +116,16 @@ public class AuctionQueryService {
         Auction auction = auctionRepository
                 .findById(auctionId)
                 .orElseThrow(
-                        () -> new AuctionNotFoundException(auctionId)
+                        () ->
+                                new AuctionNotFoundException(
+                                        auctionId
+                                )
                 );
 
         AuctionBidSummary bidSummary =
-                bidRepository.getAuctionBidSummary(auctionId);
+                bidRepository.getAuctionBidSummary(
+                        auctionId
+                );
 
         Bid highestBid = bidRepository
                 .findTopByAuctionIdOrderByAmountDescCreatedAtAsc(
@@ -124,15 +146,30 @@ public class AuctionQueryService {
         UUID winningBidId =
                 auction.getWinningBid() == null
                         ? null
-                        : auction.getWinningBid().getId();
+                        : auction
+                        .getWinningBid()
+                        .getId();
 
         String winnerName =
                 auction.getWinner() == null
                         ? null
-                        : maskUserName(auction.getWinner());
+                        : maskUserName(
+                        auction.getWinner()
+                );
 
         long timeRemainingSeconds =
-                calculateTimeRemainingSeconds(auction);
+                calculateTimeRemainingSeconds(
+                        auction
+                );
+
+        List<AuctionImageResponse> images =
+                imageRepository
+                        .findByAuctionIdOrderByDisplayOrderAsc(
+                                auctionId
+                        )
+                        .stream()
+                        .map(this::toImageResponse)
+                        .toList();
 
         return new AuctionDetailsResponse(
                 auction.getId(),
@@ -151,7 +188,8 @@ public class AuctionQueryService {
                 leadingBidderName,
                 timeRemainingSeconds,
                 winningBidId,
-                winnerName
+                winnerName,
+                images
         );
     }
 
@@ -166,6 +204,72 @@ public class AuctionQueryService {
                         pageable
                 )
                 .map(this::toWonAuctionResponse);
+    }
+
+    private Page<AuctionSummaryResponse>
+    mapAuctionPage(Page<Auction> auctions) {
+        List<UUID> auctionIds =
+                auctions
+                        .getContent()
+                        .stream()
+                        .map(Auction::getId)
+                        .toList();
+
+        Map<UUID, AuctionImage> primaryImages =
+                imageRepository
+                        .findByAuctionIdInAndPrimaryImageTrue(
+                                auctionIds
+                        )
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        image ->
+                                                image
+                                                        .getAuction()
+                                                        .getId(),
+                                        Function.identity()
+                                )
+                        );
+
+        return auctions.map(auction -> {
+            AuctionImage primaryImage =
+                    primaryImages.get(
+                            auction.getId()
+                    );
+
+            String primaryImageUrl =
+                    primaryImage == null
+                            ? null
+                            : buildImageUrl(
+                            primaryImage.getId()
+                    );
+
+            return AuctionMapper.toSummary(
+                    auction,
+                    primaryImageUrl
+            );
+        });
+    }
+
+    private AuctionImageResponse toImageResponse(
+            AuctionImage image
+    ) {
+        return new AuctionImageResponse(
+                image.getId(),
+                image.getAuction().getId(),
+                buildImageUrl(image.getId()),
+                image.getOriginalFilename(),
+                image.getContentType(),
+                image.getFileSize(),
+                image.getDisplayOrder(),
+                image.isPrimaryImage(),
+                image.getCreatedAt()
+        );
+    }
+
+    private String buildImageUrl(UUID imageId) {
+        return "/api/auction-images/"
+                + imageId;
     }
 
     private long calculateTimeRemainingSeconds(
@@ -211,22 +315,27 @@ public class AuctionQueryService {
             return "***";
         }
 
-        return value.substring(0, 1).toUpperCase()
+        return value
+                .substring(0, 1)
+                .toUpperCase()
                 + "***";
     }
 
-    private WonAuctionResponse toWonAuctionResponse(
-            Auction auction
-    ) {
+    private WonAuctionResponse
+    toWonAuctionResponse(Auction auction) {
         BigDecimal winningAmount =
                 auction.getWinningBid() == null
                         ? null
-                        : auction.getWinningBid().getAmount();
+                        : auction
+                        .getWinningBid()
+                        .getAmount();
 
         UUID winningBidId =
                 auction.getWinningBid() == null
                         ? null
-                        : auction.getWinningBid().getId();
+                        : auction
+                        .getWinningBid()
+                        .getId();
 
         return new WonAuctionResponse(
                 auction.getId(),

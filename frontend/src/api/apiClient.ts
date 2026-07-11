@@ -7,14 +7,25 @@ const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use((config) => {
-  const accessToken = localStorage.getItem("accessToken");
+apiClient.interceptors.request.use(
+  (config) => {
+    const accessToken =
+      localStorage.getItem("accessToken");
 
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
+    if (accessToken) {
+      config.headers.Authorization =
+        `Bearer ${accessToken}`;
+    }
 
-  return config;
-});
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    } else {
+      config.headers["Content-Type"] =
+        "application/json";
+    }
+
+    return config;
+  },
+);
 
 export default apiClient;

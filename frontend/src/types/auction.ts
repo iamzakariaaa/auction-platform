@@ -5,6 +5,18 @@ export type AuctionStatus =
   | "ENDED"
   | "CANCELLED";
 
+export interface AuctionImage {
+  id: string;
+  auctionId: string;
+  url: string;
+  originalFilename: string;
+  contentType: string;
+  fileSize: number;
+  displayOrder: number;
+  primaryImage: boolean;
+  createdAt: string;
+}
+
 export interface AuctionSummary {
   id: string;
   title: string;
@@ -12,6 +24,7 @@ export interface AuctionSummary {
   status: AuctionStatus;
   startTime: string;
   endTime: string;
+  primaryImageUrl: string | null;
 }
 
 export interface AuctionPage {
@@ -40,6 +53,7 @@ export interface AuctionDetails {
   timeRemainingSeconds: number;
   winningBidId: string | null;
   winnerName: string | null;
+  images: AuctionImage[];
 }
 
 export interface WonAuction {

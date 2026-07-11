@@ -12,11 +12,17 @@ import {
 
 import {
   createAuction,
+  deleteAuctionImage,
   getAuctionDetails,
+  getAuctionImages,
+  resolveAuctionImageUrl,
+  setPrimaryAuctionImage,
   updateAuction,
+  uploadAuctionImage,
 } from "../api/auctionApi";
 import type {
   AuctionFormRequest,
+  AuctionImage,
 } from "../types/auction";
 import "./AuctionFormPage.css";
 
@@ -84,6 +90,15 @@ function AuctionFormPage() {
 
   const [form, setForm] =
     useState<AuctionFormState>(EMPTY_FORM);
+  
+  const [images, setImages] =
+  useState<AuctionImage[]>([]);
+
+  const [uploadingImages, setUploadingImages] =
+    useState(false);
+
+  const [changingImageId, setChangingImageId] =
+    useState<string | null>(null);
 
   const [loading, setLoading] =
     useState(editing);
@@ -142,6 +157,13 @@ function AuctionFormPage() {
             auction.endTime,
           ),
         });
+
+        const auctionImages =
+      await getAuctionImages(
+        selectedAuctionId,
+      );
+
+    setImages(auctionImages);
       } catch (error) {
         setErrorMessage(
           getErrorMessage(
@@ -165,6 +187,135 @@ function AuctionFormPage() {
       ...current,
       [field]: value,
     }));
+  }
+
+async function handleImageSelection(
+  event: React.ChangeEvent<HTMLInputElement>,
+) {
+  if (!auctionId) {
+    return;
+  }
+
+  const selectedFiles =
+    Array.from(event.target.files ?? []);
+
+  event.target.value = "";
+
+  if (selectedFiles.length === 0) {
+    return;
+  }
+
+  if (
+    images.length + selectedFiles.length >
+    8
+  ) {
+    setErrorMessage(
+      "An auction cannot contain more than 8 images.",
+    );
+    return;
+  }
+
+  try {
+    setUploadingImages(true);
+    setErrorMessage("");
+
+    for (const file of selectedFiles) {
+      const uploaded =
+        await uploadAuctionImage(
+          auctionId,
+          file,
+        );
+
+      setImages((current) => [
+        ...current,
+        uploaded,
+      ]);
+    }
+  } catch (error) {
+    setErrorMessage(
+      getErrorMessage(
+        error,
+        "Unable to upload the image.",
+      ),
+    );
+  } finally {
+    setUploadingImages(false);
+  }
+}
+
+async function handleSetPrimary(
+  imageId: string,
+) {
+  if (!auctionId) {
+    return;
+  }
+
+  try {
+    setChangingImageId(imageId);
+    setErrorMessage("");
+
+    await setPrimaryAuctionImage(
+      auctionId,
+      imageId,
+    );
+
+    setImages((current) =>
+      current.map((image) => ({
+        ...image,
+        primaryImage:
+          image.id === imageId,
+      })),
+    );
+  } catch (error) {
+    setErrorMessage(
+      getErrorMessage(
+        error,
+        "Unable to select the primary image.",
+      ),
+    );
+  } finally {
+    setChangingImageId(null);
+  }
+}
+
+  async function handleDeleteImage(
+    imageId: string,
+  ) {
+    if (!auctionId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Delete this auction image?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setChangingImageId(imageId);
+      setErrorMessage("");
+
+      await deleteAuctionImage(
+        auctionId,
+        imageId,
+      );
+
+      const remaining =
+        await getAuctionImages(auctionId);
+
+      setImages(remaining);
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(
+          error,
+          "Unable to delete the image.",
+        ),
+      );
+    } finally {
+      setChangingImageId(null);
+    }
   }
 
   async function handleSubmit(
@@ -264,17 +415,29 @@ function AuctionFormPage() {
       setSaving(true);
 
       if (auctionId) {
-        await updateAuction(
-          auctionId,
-          request,
-        );
-      } else {
-        await createAuction(request);
-      }
+      await updateAuction(
+        auctionId,
+        request,
+      );
 
       navigate("/admin/auctions", {
         replace: true,
       });
+    } else {
+      const createdAuction =
+        await createAuction(request);
+
+      navigate(
+        `/admin/auctions/${createdAuction.id}/edit`,
+        {
+          replace: true,
+          state: {
+            message:
+              "Auction created. You can now upload images.",
+          },
+        },
+      );
+    }
     } catch (error) {
       setErrorMessage(
         getErrorMessage(
@@ -494,6 +657,98 @@ function AuctionFormPage() {
             </button>
           </div>
         </form>
+        {editing && auctionId && (
+          <section className="auction-image-manager">
+            <div className="auction-image-manager-header">
+              <div>
+                <h2>Auction Images</h2>
+
+                <p>
+                  Upload up to 8 JPEG, PNG, or WebP
+                  images. Maximum 5 MB each.
+                </p>
+              </div>
+
+              <label className="auction-image-upload-button">
+                {uploadingImages
+                  ? "Uploading..."
+                  : "Upload Images"}
+
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  disabled={
+                    uploadingImages ||
+                    images.length >= 8
+                  }
+                  onChange={(event) =>
+                    void handleImageSelection(event)
+                  }
+                />
+              </label>
+            </div>
+
+            {images.length === 0 ? (
+              <div className="auction-images-empty">
+                No images have been uploaded.
+              </div>
+            ) : (
+              <div className="auction-image-grid">
+                {images.map((image) => (
+                  <article
+                    className="auction-image-card"
+                    key={image.id}
+                  >
+                    <img
+                      src={resolveAuctionImageUrl(
+                        image.url,
+                      )}
+                      alt={image.originalFilename}
+                    />
+
+                    <div className="auction-image-card-footer">
+                      {image.primaryImage ? (
+                        <span className="auction-primary-badge">
+                          Primary
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={
+                            changingImageId !== null
+                          }
+                          onClick={() =>
+                            void handleSetPrimary(
+                              image.id,
+                            )
+                          }
+                        >
+                          Set Primary
+                        </button>
+                      )}
+
+                      <button
+                        className="auction-image-delete"
+                        type="button"
+                        disabled={
+                          changingImageId !== null
+                        }
+                        onClick={() =>
+                          void handleDeleteImage(
+                            image.id,
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </section>
     </section>
   );

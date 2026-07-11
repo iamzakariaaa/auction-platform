@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 import {
   getAuctions,
+  resolveAuctionImageUrl,
   type AuctionSort,
 } from "../api/auctionApi";
 import type {
@@ -382,6 +383,22 @@ function AuctionsPage() {
                 className="auction-card"
                 key={auction.id}
               >
+                <div className="auction-card-image-wrapper">
+                  {auction.primaryImageUrl ? (
+                    <img
+                      className="auction-card-image"
+                      src={resolveAuctionImageUrl(
+                        auction.primaryImageUrl,
+                      )}
+                      alt={auction.title}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="auction-card-placeholder">
+                      No image
+                    </div>
+                  )}
+                </div>
                 <span
                   className={`auction-card-status auction-card-status-${auction.status.toLowerCase()}`}
                 >

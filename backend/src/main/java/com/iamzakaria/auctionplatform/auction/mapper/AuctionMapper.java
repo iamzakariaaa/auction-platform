@@ -9,7 +9,9 @@ public final class AuctionMapper {
     private AuctionMapper() {
     }
 
-    public static AuctionResponse toResponse(Auction auction) {
+    public static AuctionResponse toResponse(
+            Auction auction
+    ) {
         return new AuctionResponse(
                 auction.getId(),
                 auction.getTitle(),
@@ -25,14 +27,24 @@ public final class AuctionMapper {
         );
     }
 
-    public static AuctionSummaryResponse toSummary(Auction auction) {
+    public static AuctionSummaryResponse toSummary(
+            Auction auction
+    ) {
+        return toSummary(auction, null);
+    }
+
+    public static AuctionSummaryResponse toSummary(
+            Auction auction,
+            String primaryImageUrl
+    ) {
         return new AuctionSummaryResponse(
                 auction.getId(),
                 auction.getTitle(),
                 auction.getCurrentPrice(),
                 auction.getStatus(),
                 auction.getStartTime(),
-                auction.getEndTime()
+                auction.getEndTime(),
+                primaryImageUrl
         );
     }
 }

@@ -6,7 +6,7 @@ import {
 import { Client } from "@stomp/stompjs";
 import axios from "axios";
 import { Link, useParams } from "react-router-dom";
-import { getAuctionDetails } from "../api/auctionApi";
+import { getAuctionDetails, resolveAuctionImageUrl } from "../api/auctionApi";
 import { placeBid } from "../api/bidApi";
 import type { AuctionDetails } from "../types/auction";
 import type { BidPlacedMessage } from "../types/bid";
@@ -32,6 +32,11 @@ function AuctionDetailsPage() {
   const accessToken =
     localStorage.getItem("accessToken");
 
+  const [
+  selectedImageId,
+  setSelectedImageId,
+  ] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadAuction() {
       if (!auctionId) {
@@ -45,6 +50,15 @@ function AuctionDetailsPage() {
           await getAuctionDetails(auctionId);
 
         setAuction(response);
+
+        const primaryImage =
+          response.images.find(
+            (image) => image.primaryImage,
+          ) ?? response.images[0];
+
+        setSelectedImageId(
+          primaryImage?.id ?? null,
+        );
       } catch {
         setErrorMessage(
           "Unable to load the auction.",
@@ -217,6 +231,63 @@ function AuctionDetailsPage() {
 
   return (
     <article className="auction-details">
+      {auction.images.length > 0 ? (
+      <section className="auction-gallery">
+        {(() => {
+          const selectedImage =
+            auction.images.find(
+              (image) =>
+                image.id === selectedImageId,
+            ) ?? auction.images[0];
+
+      return (
+            <>
+              <div className="auction-gallery-main">
+                <img
+                  src={resolveAuctionImageUrl(
+                    selectedImage.url,
+                  )}
+                  alt={auction.title}
+                />
+              </div>
+
+              {auction.images.length > 1 && (
+                <div className="auction-gallery-thumbnails">
+                  {auction.images.map((image) => (
+                    <button
+                      className={
+                        image.id === selectedImage.id
+                          ? "auction-gallery-thumbnail auction-gallery-thumbnail-selected"
+                          : "auction-gallery-thumbnail"
+                      }
+                      type="button"
+                      key={image.id}
+                      onClick={() =>
+                        setSelectedImageId(
+                          image.id,
+                        )
+                      }
+                    >
+                      <img
+                        src={resolveAuctionImageUrl(
+                          image.url,
+                        )}
+                        alt=""
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+            );
+          })()}
+        </section>
+      ) : (
+        <div className="auction-details-placeholder">
+          No images available
+        </div>
+      )}
+
       <h1>{auction.title}</h1>
 
       <p>{auction.description}</p>

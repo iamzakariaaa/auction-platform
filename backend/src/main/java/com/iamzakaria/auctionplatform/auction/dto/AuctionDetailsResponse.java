@@ -4,6 +4,7 @@ import com.iamzakaria.auctionplatform.auction.entity.AuctionStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record AuctionDetailsResponse(
@@ -23,6 +24,7 @@ public record AuctionDetailsResponse(
         String leadingBidderName,
         long timeRemainingSeconds,
         UUID winningBidId,
-        String winnerName
+        String winnerName,
+        List<AuctionImageResponse> images
 ) {
 }

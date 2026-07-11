@@ -3,6 +3,7 @@ import type {
   AdminDashboardResponse,
   AuctionDetails,
   AuctionFormRequest,
+  AuctionImage,
   AuctionPage,
   AuctionResponse,
   AuctionStatus,
@@ -167,4 +168,71 @@ Promise<AdminDashboardResponse> {
     );
 
   return response.data;
+}
+
+export async function getAuctionImages(
+  auctionId: string,
+): Promise<AuctionImage[]> {
+  const response =
+    await apiClient.get<AuctionImage[]>(
+      `/api/admin/auctions/${auctionId}/images`,
+    );
+
+  return response.data;
+}
+
+export async function uploadAuctionImage(
+  auctionId: string,
+  file: File,
+): Promise<AuctionImage> {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response =
+    await apiClient.post<AuctionImage>(
+      `/api/admin/auctions/${auctionId}/images`,
+      formData,
+      {
+        headers: {
+          "Content-Type": undefined,
+        },
+      },
+    );
+
+  return response.data;
+}
+
+export async function deleteAuctionImage(
+  auctionId: string,
+  imageId: string,
+): Promise<void> {
+  await apiClient.delete(
+    `/api/admin/auctions/${auctionId}/images/${imageId}`,
+  );
+}
+
+export async function setPrimaryAuctionImage(
+  auctionId: string,
+  imageId: string,
+): Promise<AuctionImage> {
+  const response =
+    await apiClient.patch<AuctionImage>(
+      `/api/admin/auctions/${auctionId}/images/${imageId}/primary`,
+    );
+
+  return response.data;
+}
+
+export function resolveAuctionImageUrl(
+  imageUrl: string,
+): string {
+  const baseUrl =
+    apiClient.defaults.baseURL ??
+    window.location.origin;
+
+  return new URL(
+    imageUrl,
+    baseUrl,
+  ).toString();
 }
