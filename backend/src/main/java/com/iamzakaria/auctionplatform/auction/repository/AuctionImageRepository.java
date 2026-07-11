@@ -2,6 +2,7 @@ package com.iamzakaria.auctionplatform.auction.repository;
 
 import com.iamzakaria.auctionplatform.auction.entity.AuctionImage;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,14 +38,27 @@ public interface AuctionImageRepository
     long countByAuctionId(UUID auctionId);
 
     @Query("""
-        SELECT COALESCE(
-            MAX(image.displayOrder),
-            -1
-        )
-        FROM AuctionImage image
-        WHERE image.auction.id = :auctionId
-        """)
+    SELECT COALESCE(
+        MAX(image.displayOrder),
+        -1
+    )
+    FROM AuctionImage image
+    WHERE image.auction.id = :auctionId
+    """)
     int findMaximumDisplayOrder(
+            @Param("auctionId")
+            UUID auctionId
+    );
+
+    @Modifying(
+            flushAutomatically = true,
+            clearAutomatically = true
+    )
+    @Query("""
+    DELETE FROM AuctionImage image
+    WHERE image.auction.id = :auctionId
+    """)
+    int deleteAllByAuctionId(
             @Param("auctionId")
             UUID auctionId
     );

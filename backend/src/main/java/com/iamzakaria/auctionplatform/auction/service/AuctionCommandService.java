@@ -4,31 +4,50 @@ import com.iamzakaria.auctionplatform.auction.dto.AuctionResponse;
 import com.iamzakaria.auctionplatform.auction.dto.CreateAuctionRequest;
 import com.iamzakaria.auctionplatform.auction.dto.UpdateAuctionRequest;
 import com.iamzakaria.auctionplatform.auction.entity.Auction;
+import com.iamzakaria.auctionplatform.auction.entity.AuctionImage;
 import com.iamzakaria.auctionplatform.auction.entity.AuctionStatus;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionCannotBeCancelledException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotEditableException;
 import com.iamzakaria.auctionplatform.auction.exception.AuctionNotFoundException;
 import com.iamzakaria.auctionplatform.auction.exception.InvalidAuctionScheduleException;
 import com.iamzakaria.auctionplatform.auction.mapper.AuctionMapper;
+import com.iamzakaria.auctionplatform.auction.repository.AuctionImageRepository;
 import com.iamzakaria.auctionplatform.auction.repository.AuctionRepository;
+import com.iamzakaria.auctionplatform.auction.storage.AuctionImageStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class AuctionCommandService {
 
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(
+                    AuctionCommandService.class
+            );
+
     private final AuctionRepository auctionRepository;
+    private final AuctionImageRepository imageRepository;
+    private final AuctionImageStorage imageStorage;
     private final Clock clock;
 
     public AuctionCommandService(
             AuctionRepository auctionRepository,
+            AuctionImageRepository imageRepository,
+            AuctionImageStorage imageStorage,
             Clock clock
     ) {
         this.auctionRepository = auctionRepository;
+        this.imageRepository = imageRepository;
+        this.imageStorage = imageStorage;
         this.clock = clock;
     }
 
@@ -45,9 +64,15 @@ public class AuctionCommandService {
 
         Auction auction = new Auction();
         auction.setTitle(request.title().trim());
-        auction.setDescription(request.description().trim());
-        auction.setStartingPrice(request.startingPrice());
-        auction.setCurrentPrice(request.startingPrice());
+        auction.setDescription(
+                request.description().trim()
+        );
+        auction.setStartingPrice(
+                request.startingPrice()
+        );
+        auction.setCurrentPrice(
+                request.startingPrice()
+        );
         auction.setMinimumBidIncrement(
                 request.minimumBidIncrement()
         );
@@ -58,15 +83,21 @@ public class AuctionCommandService {
                         now
                 )
         );
-        auction.setStartTime(request.startTime());
-        auction.setEndTime(request.endTime());
+        auction.setStartTime(
+                request.startTime()
+        );
+        auction.setEndTime(
+                request.endTime()
+        );
         auction.setCreatedAt(now);
         auction.setUpdatedAt(now);
 
         Auction savedAuction =
                 auctionRepository.save(auction);
 
-        return AuctionMapper.toResponse(savedAuction);
+        return AuctionMapper.toResponse(
+                savedAuction
+        );
     }
 
     @Transactional
@@ -84,15 +115,27 @@ public class AuctionCommandService {
 
         validateEditable(auction, now);
 
-        auction.setTitle(request.title().trim());
-        auction.setDescription(request.description().trim());
-        auction.setStartingPrice(request.startingPrice());
-        auction.setCurrentPrice(request.startingPrice());
+        auction.setTitle(
+                request.title().trim()
+        );
+        auction.setDescription(
+                request.description().trim()
+        );
+        auction.setStartingPrice(
+                request.startingPrice()
+        );
+        auction.setCurrentPrice(
+                request.startingPrice()
+        );
         auction.setMinimumBidIncrement(
                 request.minimumBidIncrement()
         );
-        auction.setStartTime(request.startTime());
-        auction.setEndTime(request.endTime());
+        auction.setStartTime(
+                request.startTime()
+        );
+        auction.setEndTime(
+                request.endTime()
+        );
         auction.setStatus(
                 determineStatus(
                         request.startTime(),
@@ -112,16 +155,118 @@ public class AuctionCommandService {
 
         validateEditable(auction, now);
 
-        auctionRepository.delete(auction);
+        List<String> storageKeys =
+                imageRepository
+                        .findByAuctionIdOrderByDisplayOrderAsc(
+                                auctionId
+                        )
+                        .stream()
+                        .map(AuctionImage::getStorageKey
+                        )
+                        .toList();
+
+        imageRepository.deleteAllByAuctionId(
+                auctionId
+        );
+
+        auctionRepository.deleteById(
+                auctionId
+        );
+
+        deleteImageFilesAfterCommit(
+                auctionId,
+                storageKeys
+        );
     }
 
-    private Auction getAuction(UUID auctionId) {
+    @Transactional
+    public AuctionResponse cancel(
+            UUID auctionId
+    ) {
+        Auction auction = auctionRepository
+                .findByIdForUpdate(auctionId)
+                .orElseThrow(
+                        () ->
+                                new AuctionNotFoundException(
+                                        auctionId
+                                )
+                );
+
+        Instant now = Instant.now(clock);
+
+        validateCancellable(auction, now);
+
+        auction.setStatus(
+                AuctionStatus.CANCELLED
+        );
+        auction.setUpdatedAt(now);
+
+        return AuctionMapper.toResponse(auction);
+    }
+
+    private void deleteImageFilesAfterCommit(
+            UUID auctionId,
+            List<String> storageKeys
+    ) {
+        if (storageKeys.isEmpty()) {
+            return;
+        }
+
+        if (
+                !TransactionSynchronizationManager
+                        .isSynchronizationActive()
+        ) {
+            deleteImageFiles(
+                    auctionId,
+                    storageKeys
+            );
+
+            return;
+        }
+
+        TransactionSynchronizationManager
+                .registerSynchronization(
+                        new TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                deleteImageFiles(
+                                        auctionId,
+                                        storageKeys
+                                );
+                            }
+                        }
+                );
+    }
+
+    private void deleteImageFiles(
+            UUID auctionId,
+            List<String> storageKeys
+    ) {
+        for (String storageKey : storageKeys) {
+            try {
+                imageStorage.delete(storageKey);
+            } catch (RuntimeException exception) {
+                LOGGER.error(
+                        "Unable to delete image file {} "
+                                + "for auction {}.",
+                        storageKey,
+                        auctionId,
+                        exception
+                );
+            }
+        }
+    }
+
+    private Auction getAuction(
+            UUID auctionId
+    ) {
         return auctionRepository
                 .findById(auctionId)
                 .orElseThrow(
-                        () -> new AuctionNotFoundException(
-                                auctionId
-                        )
+                        () ->
+                                new AuctionNotFoundException(
+                                        auctionId
+                                )
                 );
     }
 
@@ -146,10 +291,12 @@ public class AuctionCommandService {
             Instant now
     ) {
         boolean draft =
-                auction.getStatus() == AuctionStatus.DRAFT;
+                auction.getStatus()
+                        == AuctionStatus.DRAFT;
 
         boolean scheduledAndNotStarted =
-                auction.getStatus() == AuctionStatus.SCHEDULED
+                auction.getStatus()
+                        == AuctionStatus.SCHEDULED
                         && now.isBefore(
                         auction.getStartTime()
                 );
@@ -172,37 +319,25 @@ public class AuctionCommandService {
         }
     }
 
-    @Transactional
-    public AuctionResponse cancel(UUID auctionId) {
-        Auction auction = auctionRepository
-                .findByIdForUpdate(auctionId)
-                .orElseThrow(
-                        () -> new AuctionNotFoundException(
-                                auctionId
-                        )
-                );
-
-        Instant now = Instant.now(clock);
-
-        validateCancellable(auction, now);
-
-        auction.setStatus(AuctionStatus.CANCELLED);
-        auction.setUpdatedAt(now);
-
-        return AuctionMapper.toResponse(auction);
-    }
     private void validateCancellable(
             Auction auction,
             Instant now
     ) {
         boolean cancellableStatus =
-                auction.getStatus() == AuctionStatus.SCHEDULED
-                        || auction.getStatus() == AuctionStatus.ACTIVE;
+                auction.getStatus()
+                        == AuctionStatus.SCHEDULED
+                        || auction.getStatus()
+                        == AuctionStatus.ACTIVE;
 
         boolean hasNotEnded =
-                now.isBefore(auction.getEndTime());
+                now.isBefore(
+                        auction.getEndTime()
+                );
 
-        if (!cancellableStatus || !hasNotEnded) {
+        if (
+                !cancellableStatus
+                        || !hasNotEnded
+        ) {
             throw new AuctionCannotBeCancelledException(
                     auction.getId()
             );

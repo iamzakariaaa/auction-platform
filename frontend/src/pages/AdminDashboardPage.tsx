@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 import {
   getAdminDashboard,
+  resolveAuctionImageUrl,
 } from "../api/auctionApi";
 import type {
   AdminDashboardResponse,
@@ -246,6 +247,7 @@ function AdminDashboardPage() {
             <table className="dashboard-table">
               <thead>
                 <tr>
+                  <th>Image</th>
                   <th>Auction</th>
                   <th>Status</th>
                   <th>Current price</th>
@@ -259,6 +261,20 @@ function AdminDashboardPage() {
                 {dashboard.recentAuctions.map(
                   (auction) => (
                     <tr key={auction.id}>
+                      <td>
+                        <div className="dashboard-auction-thumbnail">
+                          {auction.primaryImageUrl ? (
+                            <img
+                              src={resolveAuctionImageUrl(
+                                auction.primaryImageUrl,
+                              )}
+                              alt={auction.title}
+                            />
+                          ) : (
+                            <span>No image</span>
+                          )}
+                        </div>
+                      </td>
                       <td>
                         <strong>
                           {auction.title}

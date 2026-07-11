@@ -18,6 +18,7 @@ import AdminAuctionsPage from "./pages/AdminAuctionsPage";
 import AuctionFormPage from "./pages/AuctionFormPage";
 import AdminAuctionBidsPage from "./pages/AdminAuctionBidsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AuctionImagesPage from "./pages/AuctionImagesPage";
 
 function App() {
   return (
@@ -84,6 +85,14 @@ function App() {
             element={
               <AdminRoute>
                 <AuctionFormPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/auctions/:auctionId/images"
+            element={
+              <AdminRoute>
+                <AuctionImagesPage />
               </AdminRoute>
             }
           />

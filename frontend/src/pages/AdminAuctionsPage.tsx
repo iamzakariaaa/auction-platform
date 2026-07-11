@@ -12,6 +12,7 @@ import {
   cancelAuction,
   deleteAuction,
   getAuctions,
+  resolveAuctionImageUrl,
 } from "../api/auctionApi";
 import type {
   AuctionStatus,
@@ -349,22 +350,39 @@ function AdminAuctionsPage() {
                   className="admin-auction-card"
                   key={auction.id}
                 >
-                  <div className="admin-auction-card-heading">
-                    <div>
-                      <span
-                        className={`auction-status auction-status-${auction.status.toLowerCase()}`}
-                      >
-                        {auction.status}
-                      </span>
-
-                      <h3>{auction.title}</h3>
+                  <div className="admin-auction-card-top">
+                    <div className="admin-auction-thumbnail">
+                      {auction.primaryImageUrl ? (
+                        <img
+                          src={resolveAuctionImageUrl(
+                            auction.primaryImageUrl,
+                          )}
+                          alt={auction.title}
+                        />
+                      ) : (
+                        <div className="admin-auction-thumbnail-placeholder">
+                          No image
+                        </div>
+                      )}
                     </div>
 
-                    <strong>
-                      {formatMoney(
-                        auction.currentPrice,
-                      )}
-                    </strong>
+                    <div className="admin-auction-card-heading">
+                      <div>
+                        <span
+                          className={`auction-status auction-status-${auction.status.toLowerCase()}`}
+                        >
+                          {auction.status}
+                        </span>
+
+                        <h3>{auction.title}</h3>
+                      </div>
+
+                      <strong>
+                        {formatMoney(
+                          auction.currentPrice,
+                        )}
+                      </strong>
+                    </div>
                   </div>
 
                   <dl className="admin-auction-details">
@@ -402,7 +420,18 @@ function AdminAuctionsPage() {
                         >
                         View Bids
                         </Link>
-
+                    
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/admin/auctions/${auction.id}/images`,
+                        )
+                      }
+                    >
+                      Manage Images
+                    </button>
+                    
                     {editable && (
                       <>
                         <button

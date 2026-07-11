@@ -9,6 +9,6 @@ public record AdminDashboardResponse(
         long activeAuctions,
         long endedAuctions,
         long cancelledAuctions,
-        List<AuctionResponse> recentAuctions
+        List<AuctionSummaryResponse> recentAuctions
 ) {
 }

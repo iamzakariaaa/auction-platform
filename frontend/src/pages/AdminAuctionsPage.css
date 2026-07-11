@@ -2,6 +2,41 @@
   padding: 20px;
 }
 
+.admin-auction-thumbnail {
+  width: 96px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #f3f4f6;
+}
+
+.admin-auction-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-auction-thumbnail-placeholder {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.admin-auction-card-top {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.admin-auction-card-heading {
+  min-width: 0;
+}
+
 .admin-page-header {
   display: flex;
   align-items: flex-end;

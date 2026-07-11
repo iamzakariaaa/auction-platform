@@ -414,30 +414,28 @@ async function handleSetPrimary(
     try {
       setSaving(true);
 
-      if (auctionId) {
-      await updateAuction(
-        auctionId,
-        request,
-      );
+      if (editing && auctionId) {
+        await updateAuction(
+          auctionId,
+          request,
+        );
 
-      navigate("/admin/auctions", {
-        replace: true,
-      });
-    } else {
-      const createdAuction =
-        await createAuction(request);
+        navigate("/admin/auctions");
+      } else {
+        const createdAuction =
+          await createAuction(request);
 
-      navigate(
-        `/admin/auctions/${createdAuction.id}/edit`,
-        {
-          replace: true,
-          state: {
-            message:
-              "Auction created. You can now upload images.",
+        navigate(
+          `/admin/auctions/${createdAuction.id}/images`,
+          {
+            state: {
+              message:
+                "Auction created. You can now upload its images.",
+            },
           },
-        },
-      );
-    }
+        );
+      }
+    
     } catch (error) {
       setErrorMessage(
         getErrorMessage(
