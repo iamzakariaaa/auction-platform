@@ -10,8 +10,8 @@ import {
 } from "react-router-dom";
 import axios from "axios";
 
-import { login } from "../api/authApi";
-import { useAuth } from "../context/AuthContext";
+import { login } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext";
 import "./AuthPage.css";
 
 interface LocationState {

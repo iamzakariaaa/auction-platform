@@ -8,9 +8,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 import axios from "axios";
-
-import { register } from "../api/authApi";
-import { useAuth } from "../context/AuthContext";
+import { register} from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext";
 import "./AuthPage.css";
 
 function RegisterPage() {

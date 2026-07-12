@@ -4,21 +4,22 @@ import {
   Routes,
 } from "react-router-dom";
 
-import ProtectedRoute from "./components/ProtectedRoute";
+import ProtectedRoute from "./routes/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
-import AuctionDetailsPage from "./pages/AuctionDetailsPage";
-import AuctionsPage from "./pages/AuctionsPage";
-import LoginPage from "./pages/LoginPage";
-import MyBidsPage from "./pages/MyBidsPage";
-import RegisterPage from "./pages/RegisterPage";
-import WonAuctionsPage from "./pages/WonAuctionsPage";
-import AdminRoute from "./components/AdminRoute";
-import AdminAuctionsPage from "./pages/AdminAuctionsPage";
-import AuctionFormPage from "./pages/AuctionFormPage";
-import AdminAuctionBidsPage from "./pages/AdminAuctionBidsPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
-import AuctionImagesPage from "./pages/AuctionImagesPage";
+import AuctionsPage from "./pages/public/AuctionsPage";
+import MyBidsPage from "./pages/account/MyBidsPage";
+import WonAuctionsPage from "./pages/account/WonAuctionsPage";
+import AdminRoute from "./routes/AdminRoute";
+import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
+import AuctionDetailsPage from "./pages/public/AuctionDetailsPage";
+import AdminAuctionsPage from "./pages/admin/auctions/AdminAuctionsPage";
+import AuctionFormPage from "./pages/admin/auctions/AuctionFormPage";
+import AuctionImagesPage from "./pages/admin/auctions/AuctionImagesPage";
+import AdminAuctionBidsPage from "./pages/admin/auctions/AdminAuctionBidsPage";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+
 
 function App() {
   return (

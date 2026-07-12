@@ -1,3 +1,5 @@
+import type { PageResponse } from "./PageResponse";
+
 export type AuctionStatus =
   | "DRAFT"
   | "SCHEDULED"
@@ -27,13 +29,8 @@ export interface AuctionSummary {
   primaryImageUrl: string | null;
 }
 
-export interface AuctionPage {
-  content: AuctionSummary[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-}
+export type AuctionPage =
+  PageResponse<AuctionSummary>;
 
 export interface AuctionDetails {
   id: string;
@@ -64,15 +61,8 @@ export interface WonAuction {
   endedAt: string;
 }
 
-export interface WonAuctionPage {
-  content: WonAuction[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-  first: boolean;
-  last: boolean;
-}
+export type WonAuctionPage =
+  PageResponse<WonAuction>;
 
 export interface AuctionResponse {
   id: string;
