@@ -1,10 +1,17 @@
 import {
   type ChangeEvent,
-  type SyntheticEvent,
   useEffect,
+  useMemo,
   useRef,
-  useState,
 } from "react";
+
+import {
+  zodResolver,
+} from "@hookform/resolvers/zod";
+
+import {
+  useForm,
+} from "react-hook-form";
 
 import {
   Link,
@@ -13,33 +20,45 @@ import {
 } from "react-router-dom";
 
 import {
-  getApiErrorMessage,
-} from "../../../api/getApiErrorMessage";
-
-import {
   resolveAuctionImageUrl,
 } from "../../../api/auctionApi";
 
+import {
+  getApiErrorMessage,
+} from "../../../api/getApiErrorMessage";
+
 import ErrorMessage from
   "../../../components/ErrorMessage";
+
 import LoadingState from
   "../../../components/LoadingState";
 
 import useCreateAuctionMutation from
   "../../../hooks/mutations/useCreateAuctionMutation";
+
 import useDeleteAuctionImageMutation from
   "../../../hooks/mutations/useDeleteAuctionImageMutation";
+
 import useSetPrimaryAuctionImageMutation from
   "../../../hooks/mutations/useSetPrimaryAuctionImageMutation";
+
 import useUpdateAuctionMutation from
   "../../../hooks/mutations/useUpdateAuctionMutation";
+
 import useUploadAuctionImagesMutation from
   "../../../hooks/mutations/useUploadAuctionImagesMutation";
 
 import useAuctionDetailsQuery from
   "../../../hooks/queries/useAuctionDetailsQuery";
+
 import useAuctionImagesQuery from
   "../../../hooks/queries/useAuctionImagesQuery";
+
+import {
+  createAuctionFormSchema,
+  type AuctionFormInput,
+  type AuctionFormValues,
+} from "../../../schemas/auctionFormSchema";
 
 import type {
   AuctionFormRequest,
@@ -51,47 +70,68 @@ import {
 
 import "./AuctionFormPage.css";
 
-interface AuctionFormState {
-  title: string;
-  description: string;
-  startingPrice: string;
-  minimumBidIncrement: string;
-  startTime: string;
-  endTime: string;
-}
-
-const EMPTY_FORM: AuctionFormState = {
-  title: "",
-  description: "",
-  startingPrice: "",
-  minimumBidIncrement: "",
-  startTime: "",
-  endTime: "",
-};
+const EMPTY_FORM:
+  AuctionFormInput = {
+    title: "",
+    description: "",
+    startingPrice: "",
+    minimumBidIncrement: "",
+    startTime: "",
+    endTime: "",
+  };
 
 function AuctionFormPage() {
   const navigate =
     useNavigate();
 
-  const { auctionId } = useParams<{
-    auctionId: string;
-  }>();
+  const { auctionId } =
+    useParams<{
+      auctionId: string;
+    }>();
 
   const editing =
     auctionId !== undefined;
 
   const initializedAuctionIdRef =
-    useRef<string | null>(null);
-
-  const [form, setForm] =
-    useState<AuctionFormState>(
-      EMPTY_FORM,
+    useRef<string | null>(
+      null,
     );
 
-  const [
-    validationError,
-    setValidationError,
-  ] = useState("");
+  const formSchema =
+    useMemo(
+      () =>
+        createAuctionFormSchema(
+          editing,
+        ),
+      [editing],
+    );
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setError,
+    clearErrors,
+
+    formState: {
+      errors,
+      isSubmitting,
+    },
+  } = useForm<
+    AuctionFormInput,
+    unknown,
+    AuctionFormValues
+  >({
+    resolver:
+      zodResolver(
+        formSchema,
+      ),
+
+    defaultValues:
+      EMPTY_FORM,
+
+    mode: "onSubmit",
+  });
 
   const auctionQuery =
     useAuctionDetailsQuery(
@@ -138,23 +178,27 @@ function AuctionFormPage() {
     }
 
     if (
-      initializedAuctionIdRef.current ===
-      auctionId
+      initializedAuctionIdRef
+        .current === auctionId
     ) {
       return;
     }
 
-    setForm({
-      title: auction.title,
+    reset({
+      title:
+        auction.title,
 
       description:
         auction.description,
 
       startingPrice:
-        auction.startingPrice.toString(),
+        auction.startingPrice
+          .toString(),
 
       minimumBidIncrement:
-        auction.minimumBidIncrement.toString(),
+        auction
+          .minimumBidIncrement
+          .toString(),
 
       startTime:
         toLocalDateTimeInput(
@@ -173,6 +217,7 @@ function AuctionFormPage() {
     auction,
     auctionId,
     editing,
+    reset,
   ]);
 
   const auctionIsEditable =
@@ -187,6 +232,7 @@ function AuctionFormPage() {
     );
 
   const saving =
+    isSubmitting ||
     createMutation.isPending ||
     updateMutation.isPending;
 
@@ -244,7 +290,7 @@ function AuctionFormPage() {
       : "";
 
   const displayedError =
-    validationError ||
+    errors.root?.message ||
     auctionLoadError ||
     imageLoadError ||
     uploadError ||
@@ -258,19 +304,6 @@ function AuctionFormPage() {
     uploadMutation.reset();
     setPrimaryMutation.reset();
     deleteImageMutation.reset();
-  }
-
-  function updateField(
-    field: keyof AuctionFormState,
-    value: string,
-  ) {
-    setValidationError("");
-    clearMutationErrors();
-
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
   }
 
   async function handleImageSelection(
@@ -296,22 +329,29 @@ function AuctionFormPage() {
         selectedFiles.length >
       8
     ) {
-      setValidationError(
-        "An auction cannot contain more than 8 images.",
+      setError(
+        "root",
+        {
+          type: "manual",
+          message:
+            "An auction cannot contain more than 8 images.",
+        },
       );
+
       return;
     }
 
-    setValidationError("");
+    clearErrors("root");
     clearMutationErrors();
 
     try {
       await uploadMutation.mutateAsync({
         auctionId,
-        files: selectedFiles,
+        files:
+          selectedFiles,
       });
     } catch {
-      // The mutation error is displayed
+      // Mutation error is displayed
       // through uploadMutation.error.
     }
   }
@@ -323,7 +363,7 @@ function AuctionFormPage() {
       return;
     }
 
-    setValidationError("");
+    clearErrors("root");
     clearMutationErrors();
 
     try {
@@ -332,7 +372,7 @@ function AuctionFormPage() {
         imageId,
       });
     } catch {
-      // The mutation error is displayed
+      // Mutation error is displayed
       // through setPrimaryMutation.error.
     }
   }
@@ -353,7 +393,7 @@ function AuctionFormPage() {
       return;
     }
 
-    setValidationError("");
+    clearErrors("root");
     clearMutationErrors();
 
     try {
@@ -362,163 +402,95 @@ function AuctionFormPage() {
         imageId,
       });
     } catch {
-      // The mutation error is displayed
+      // Mutation error is displayed
       // through deleteImageMutation.error.
     }
   }
 
-  async function handleSubmit(
-    event:
-      SyntheticEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
+  const onSubmit =
+    handleSubmit(
+      async (
+        values:
+          AuctionFormValues,
+      ) => {
+        clearErrors("root");
+        clearMutationErrors();
 
-    setValidationError("");
-    clearMutationErrors();
+        const startDate =
+          new Date(
+            values.startTime,
+          );
 
-    const title =
-      form.title.trim();
+        const endDate =
+          new Date(
+            values.endTime,
+          );
 
-    const description =
-      form.description.trim();
+        const request:
+          AuctionFormRequest = {
+            title:
+              values.title,
 
-    const startingPrice =
-      Number(
-        form.startingPrice,
-      );
+            description:
+              values.description,
 
-    const minimumBidIncrement =
-      Number(
-        form.minimumBidIncrement,
-      );
+            startingPrice:
+              Number(
+                values.startingPrice,
+              ),
 
-    if (
-      !title ||
-      !description ||
-      !form.startTime ||
-      !form.endTime
-    ) {
-      setValidationError(
-        "Please complete all fields.",
-      );
-      return;
-    }
+            minimumBidIncrement:
+              Number(
+                values
+                  .minimumBidIncrement,
+              ),
 
-    if (
-      !Number.isFinite(
-        startingPrice,
-      ) ||
-      startingPrice <= 0
-    ) {
-      setValidationError(
-        "Starting price must be greater than zero.",
-      );
-      return;
-    }
+            startTime:
+              startDate.toISOString(),
 
-    if (
-      !Number.isFinite(
-        minimumBidIncrement,
-      ) ||
-      minimumBidIncrement <= 0
-    ) {
-      setValidationError(
-        "Minimum bid increment must be greater than zero.",
-      );
-      return;
-    }
+            endTime:
+              endDate.toISOString(),
+          };
 
-    const startDate =
-      new Date(
-        form.startTime,
-      );
+        try {
+          if (
+            editing &&
+            auctionId
+          ) {
+            await updateMutation
+              .mutateAsync({
+                auctionId,
+                request,
+              });
 
-    const endDate =
-      new Date(
-        form.endTime,
-      );
+            navigate(
+              "/admin/auctions",
+            );
 
-    if (
-      Number.isNaN(
-        startDate.getTime(),
-      ) ||
-      Number.isNaN(
-        endDate.getTime(),
-      )
-    ) {
-      setValidationError(
-        "Please enter valid auction dates.",
-      );
-      return;
-    }
+            return;
+          }
 
-    if (endDate <= startDate) {
-      setValidationError(
-        "End time must be after start time.",
-      );
-      return;
-    }
+          const createdAuction =
+            await createMutation
+              .mutateAsync(
+                request,
+              );
 
-    if (
-      !editing &&
-      endDate.getTime() <= Date.now()
-    ) {
-      setValidationError(
-        "The auction end time must be in the future.",
-      );
-      return;
-    }
-
-    const request:
-      AuctionFormRequest = {
-        title,
-        description,
-        startingPrice,
-        minimumBidIncrement,
-
-        startTime:
-          startDate.toISOString(),
-
-        endTime:
-          endDate.toISOString(),
-      };
-
-    try {
-      if (
-        editing &&
-        auctionId
-      ) {
-        await updateMutation.mutateAsync({
-          auctionId,
-          request,
-        });
-
-        navigate(
-          "/admin/auctions",
-        );
-
-        return;
-      }
-
-      const createdAuction =
-        await createMutation.mutateAsync(
-          request,
-        );
-
-      navigate(
-        `/admin/auctions/${createdAuction.id}/images`,
-        {
-          state: {
-            message:
-              "Auction created. You can now upload its images.",
-          },
-        },
-      );
-    } catch {
-      // The relevant mutation error is
-      // displayed through the mutation state.
-    }
-  }
+          navigate(
+            `/admin/auctions/${createdAuction.id}/images`,
+            {
+              state: {
+                message:
+                  "Auction created. You can now upload its images.",
+              },
+            },
+          );
+        } catch {
+          // Mutation error is displayed
+          // through the mutation state.
+        }
+      },
+    );
 
   if (
     editing &&
@@ -610,9 +582,8 @@ function AuctionFormPage() {
       <section className="auction-editor">
         <form
           className="auction-form"
-          onSubmit={
-            handleSubmit
-          }
+          onSubmit={onSubmit}
+          noValidate
         >
           <div className="auction-form-field auction-form-full">
             <label htmlFor="auction-title">
@@ -621,19 +592,33 @@ function AuctionFormPage() {
 
             <input
               id="auction-title"
-              name="title"
               type="text"
-              value={form.title}
-              onChange={(event) =>
-                updateField(
-                  "title",
-                  event.target.value,
-                )
-              }
               maxLength={200}
               disabled={saving}
-              required
+              aria-invalid={
+                errors.title
+                  ? "true"
+                  : "false"
+              }
+              aria-describedby={
+                errors.title
+                  ? "auction-title-error"
+                  : undefined
+              }
+              {...register(
+                "title",
+              )}
             />
+
+            {errors.title && (
+              <p
+                id="auction-title-error"
+                className="error-message"
+                role="alert"
+              >
+                {errors.title.message}
+              </p>
+            )}
           </div>
 
           <div className="auction-form-field auction-form-full">
@@ -643,19 +628,36 @@ function AuctionFormPage() {
 
             <textarea
               id="auction-description"
-              name="description"
-              value={form.description}
-              onChange={(event) =>
-                updateField(
-                  "description",
-                  event.target.value,
-                )
-              }
               rows={6}
               maxLength={5000}
               disabled={saving}
-              required
+              aria-invalid={
+                errors.description
+                  ? "true"
+                  : "false"
+              }
+              aria-describedby={
+                errors.description
+                  ? "auction-description-error"
+                  : undefined
+              }
+              {...register(
+                "description",
+              )}
             />
+
+            {errors.description && (
+              <p
+                id="auction-description-error"
+                className="error-message"
+                role="alert"
+              >
+                {
+                  errors.description
+                    .message
+                }
+              </p>
+            )}
           </div>
 
           <div className="auction-form-field">
@@ -665,22 +667,37 @@ function AuctionFormPage() {
 
             <input
               id="starting-price"
-              name="startingPrice"
               type="number"
               min="0.01"
               step="0.01"
-              value={
-                form.startingPrice
-              }
-              onChange={(event) =>
-                updateField(
-                  "startingPrice",
-                  event.target.value,
-                )
-              }
               disabled={saving}
-              required
+              aria-invalid={
+                errors.startingPrice
+                  ? "true"
+                  : "false"
+              }
+              aria-describedby={
+                errors.startingPrice
+                  ? "starting-price-error"
+                  : undefined
+              }
+              {...register(
+                "startingPrice",
+              )}
             />
+
+            {errors.startingPrice && (
+              <p
+                id="starting-price-error"
+                className="error-message"
+                role="alert"
+              >
+                {
+                  errors.startingPrice
+                    .message
+                }
+              </p>
+            )}
           </div>
 
           <div className="auction-form-field">
@@ -690,22 +707,40 @@ function AuctionFormPage() {
 
             <input
               id="minimum-increment"
-              name="minimumBidIncrement"
               type="number"
               min="0.01"
               step="0.01"
-              value={
-                form.minimumBidIncrement
-              }
-              onChange={(event) =>
-                updateField(
-                  "minimumBidIncrement",
-                  event.target.value,
-                )
-              }
               disabled={saving}
-              required
+              aria-invalid={
+                errors
+                  .minimumBidIncrement
+                  ? "true"
+                  : "false"
+              }
+              aria-describedby={
+                errors
+                  .minimumBidIncrement
+                  ? "minimum-increment-error"
+                  : undefined
+              }
+              {...register(
+                "minimumBidIncrement",
+              )}
             />
+
+            {errors.minimumBidIncrement && (
+              <p
+                id="minimum-increment-error"
+                className="error-message"
+                role="alert"
+              >
+                {
+                  errors
+                    .minimumBidIncrement
+                    .message
+                }
+              </p>
+            )}
           </div>
 
           <div className="auction-form-field">
@@ -715,18 +750,35 @@ function AuctionFormPage() {
 
             <input
               id="start-time"
-              name="startTime"
               type="datetime-local"
-              value={form.startTime}
-              onChange={(event) =>
-                updateField(
-                  "startTime",
-                  event.target.value,
-                )
-              }
               disabled={saving}
-              required
+              aria-invalid={
+                errors.startTime
+                  ? "true"
+                  : "false"
+              }
+              aria-describedby={
+                errors.startTime
+                  ? "start-time-error"
+                  : undefined
+              }
+              {...register(
+                "startTime",
+              )}
             />
+
+            {errors.startTime && (
+              <p
+                id="start-time-error"
+                className="error-message"
+                role="alert"
+              >
+                {
+                  errors.startTime
+                    .message
+                }
+              </p>
+            )}
           </div>
 
           <div className="auction-form-field">
@@ -736,18 +788,32 @@ function AuctionFormPage() {
 
             <input
               id="end-time"
-              name="endTime"
               type="datetime-local"
-              value={form.endTime}
-              onChange={(event) =>
-                updateField(
-                  "endTime",
-                  event.target.value,
-                )
-              }
               disabled={saving}
-              required
+              aria-invalid={
+                errors.endTime
+                  ? "true"
+                  : "false"
+              }
+              aria-describedby={
+                errors.endTime
+                  ? "end-time-error"
+                  : undefined
+              }
+              {...register(
+                "endTime",
+              )}
             />
+
+            {errors.endTime && (
+              <p
+                id="end-time-error"
+                className="error-message"
+                role="alert"
+              >
+                {errors.endTime.message}
+              </p>
+            )}
           </div>
 
           {displayedError && (

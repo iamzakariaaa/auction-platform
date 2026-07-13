@@ -1,8 +1,15 @@
 import {
-  type SyntheticEvent,
   useEffect,
   useState,
 } from "react";
+
+import {
+  zodResolver,
+} from "@hookform/resolvers/zod";
+
+import {
+  useForm,
+} from "react-hook-form";
 
 import {
   Link,
@@ -20,6 +27,11 @@ import {
 
 import useAuth from
   "../../hooks/useAuth";
+
+import {
+  loginSchema,
+  type LoginFormValues,
+} from "../../schemas/authSchemas";
 
 import "./AuthPage.css";
 
@@ -40,21 +52,31 @@ function LoginPage() {
     startSession,
   } = useAuth();
 
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
   const [
-    errorMessage,
-    setErrorMessage,
+    serverErrorMessage,
+    setServerErrorMessage,
   ] = useState("");
 
-  const [
-    submitting,
-    setSubmitting,
-  ] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: {
+      errors,
+      isSubmitting,
+    },
+  } = useForm<LoginFormValues>({
+    resolver:
+      zodResolver(
+        loginSchema,
+      ),
+
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+
+    mode: "onSubmit",
+  });
 
   const locationState =
     location.state as
@@ -85,69 +107,50 @@ function LoginPage() {
     navigate,
   ]);
 
-  async function handleSubmit(
-    event: SyntheticEvent<
-      HTMLFormElement,
-      SubmitEvent
-    >,
-  ) {
-    event.preventDefault();
+  const onSubmit =
+    handleSubmit(
+      async (values) => {
+        setServerErrorMessage("");
 
-    const normalizedEmail =
-      email
-        .trim()
-        .toLowerCase();
+        try {
+          const response =
+            await login({
+              email:
+                values.email
+                  .trim()
+                  .toLowerCase(),
 
-    if (
-      !normalizedEmail ||
-      !password
-    ) {
-      setErrorMessage(
-        "Please enter your email and password.",
-      );
+              password:
+                values.password,
+            });
 
-      return;
-    }
+          await startSession({
+            accessToken:
+              response.accessToken,
 
-    setSubmitting(true);
-    setErrorMessage("");
+            expiresIn:
+              response.expiresIn,
 
-    try {
-      const response =
-        await login({
-          email:
-            normalizedEmail,
-          password,
-        });
+            user:
+              response.user,
+          });
 
-      await startSession({
-        accessToken:
-          response.accessToken,
-
-        expiresIn:
-          response.expiresIn,
-
-        user:
-          response.user,
-      });
-
-      navigate(
-        destination,
-        {
-          replace: true,
-        },
-      );
-    } catch (error) {
-      setErrorMessage(
-        getApiErrorMessage(
-          error,
-          "Login failed. Please check your credentials.",
-        ),
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
+          navigate(
+            destination,
+            {
+              replace: true,
+            },
+          );
+        } catch (error) {
+          setServerErrorMessage(
+            getApiErrorMessage(
+              error,
+              "Login failed. Please check your credentials.",
+            ),
+          );
+        }
+      },
+    );
 
   return (
     <main className="auth-page">
@@ -167,7 +170,8 @@ function LoginPage() {
         </div>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={onSubmit}
+          noValidate
         >
           <div className="form-field">
             <label htmlFor="login-email">
@@ -176,19 +180,36 @@ function LoginPage() {
 
             <input
               id="login-email"
-              name="email"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(event) =>
-                setEmail(
-                  event.target.value,
-                )
+              aria-invalid={
+                errors.email
+                  ? "true"
+                  : "false"
               }
-              disabled={submitting}
-              required
+              aria-describedby={
+                errors.email
+                  ? "login-email-error"
+                  : undefined
+              }
+              disabled={
+                isSubmitting
+              }
+              {...register(
+                "email",
+              )}
             />
+
+            {errors.email && (
+              <p
+                id="login-email-error"
+                className="error-message"
+                role="alert"
+              >
+                {errors.email.message}
+              </p>
+            )}
           </div>
 
           <div className="form-field">
@@ -198,36 +219,55 @@ function LoginPage() {
 
             <input
               id="login-password"
-              name="password"
               type="password"
               autoComplete="current-password"
               placeholder="Enter your password"
-              value={password}
-              onChange={(event) =>
-                setPassword(
-                  event.target.value,
-                )
+              aria-invalid={
+                errors.password
+                  ? "true"
+                  : "false"
               }
-              disabled={submitting}
-              required
+              aria-describedby={
+                errors.password
+                  ? "login-password-error"
+                  : undefined
+              }
+              disabled={
+                isSubmitting
+              }
+              {...register(
+                "password",
+              )}
             />
+
+            {errors.password && (
+              <p
+                id="login-password-error"
+                className="error-message"
+                role="alert"
+              >
+                {errors.password.message}
+              </p>
+            )}
           </div>
 
-          {errorMessage && (
+          {serverErrorMessage && (
             <p
               className="error-message"
               role="alert"
             >
-              {errorMessage}
+              {serverErrorMessage}
             </p>
           )}
 
           <button
             className="primary-form-button"
             type="submit"
-            disabled={submitting}
+            disabled={
+              isSubmitting
+            }
           >
-            {submitting
+            {isSubmitting
               ? "Logging in..."
               : "Login"}
           </button>

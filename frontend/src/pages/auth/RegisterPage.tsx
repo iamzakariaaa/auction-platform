@@ -1,8 +1,15 @@
 import {
-  type SyntheticEvent,
   useEffect,
   useState,
 } from "react";
+
+import {
+  zodResolver,
+} from "@hookform/resolvers/zod";
+
+import {
+  useForm,
+} from "react-hook-form";
 
 import {
   Link,
@@ -11,7 +18,7 @@ import {
 } from "react-router-dom";
 
 import {
-  register,
+  register as registerUser,
 } from "../../api/authApi";
 
 import {
@@ -20,6 +27,11 @@ import {
 
 import useAuth from
   "../../hooks/useAuth";
+
+import {
+  registerSchema,
+  type RegisterFormValues,
+} from "../../schemas/authSchemas";
 
 import "./AuthPage.css";
 
@@ -40,32 +52,35 @@ function RegisterPage() {
     startSession,
   } = useAuth();
 
-  const [firstName, setFirstName] =
-    useState("");
-
-  const [lastName, setLastName] =
-    useState("");
-
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
   const [
-    confirmPassword,
-    setConfirmPassword,
+    serverErrorMessage,
+    setServerErrorMessage,
   ] = useState("");
 
-  const [
-    errorMessage,
-    setErrorMessage,
-  ] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: {
+      errors,
+      isSubmitting,
+    },
+  } =
+    useForm<RegisterFormValues>({
+      resolver:
+        zodResolver(
+          registerSchema,
+        ),
 
-  const [
-    submitting,
-    setSubmitting,
-  ] = useState(false);
+      defaultValues: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      },
+
+      mode: "onSubmit",
+    });
 
   const locationState =
     location.state as
@@ -96,105 +111,56 @@ function RegisterPage() {
     navigate,
   ]);
 
-  async function handleSubmit(
-    event: SyntheticEvent<
-      HTMLFormElement,
-      SubmitEvent
-    >,
-  ) {
-    event.preventDefault();
+  const onSubmit =
+    handleSubmit(
+      async (values) => {
+        setServerErrorMessage("");
 
-    setErrorMessage("");
+        try {
+          const response =
+            await registerUser({
+              firstName:
+                values.firstName.trim(),
 
-    const normalizedFirstName =
-      firstName.trim();
+              lastName:
+                values.lastName.trim(),
 
-    const normalizedLastName =
-      lastName.trim();
+              email:
+                values.email
+                  .trim()
+                  .toLowerCase(),
 
-    const normalizedEmail =
-      email
-        .trim()
-        .toLowerCase();
+              password:
+                values.password,
+            });
 
-    if (
-      !normalizedFirstName ||
-      !normalizedLastName ||
-      !normalizedEmail ||
-      !password ||
-      !confirmPassword
-    ) {
-      setErrorMessage(
-        "Please complete all fields.",
-      );
+          await startSession({
+            accessToken:
+              response.accessToken,
 
-      return;
-    }
+            expiresIn:
+              response.expiresIn,
 
-    if (password.length < 8) {
-      setErrorMessage(
-        "Password must contain at least 8 characters.",
-      );
+            user:
+              response.user,
+          });
 
-      return;
-    }
-
-    if (
-      password !==
-      confirmPassword
-    ) {
-      setErrorMessage(
-        "Passwords do not match.",
-      );
-
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const response =
-        await register({
-          firstName:
-            normalizedFirstName,
-
-          lastName:
-            normalizedLastName,
-
-          email:
-            normalizedEmail,
-
-          password,
-        });
-
-      await startSession({
-        accessToken:
-          response.accessToken,
-
-        expiresIn:
-          response.expiresIn,
-
-        user:
-          response.user,
-      });
-
-      navigate(
-        destination,
-        {
-          replace: true,
-        },
-      );
-    } catch (error) {
-      setErrorMessage(
-        getApiErrorMessage(
-          error,
-          "Registration failed. Please check your information.",
-        ),
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  }
+          navigate(
+            destination,
+            {
+              replace: true,
+            },
+          );
+        } catch (error) {
+          setServerErrorMessage(
+            getApiErrorMessage(
+              error,
+              "Registration failed. Please check your information.",
+            ),
+          );
+        }
+      },
+    );
 
   return (
     <main className="auth-page">
@@ -216,7 +182,8 @@ function RegisterPage() {
         </div>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={onSubmit}
+          noValidate
         >
           <div className="form-row">
             <div className="form-field">
@@ -226,20 +193,39 @@ function RegisterPage() {
 
               <input
                 id="firstName"
-                name="firstName"
                 type="text"
                 autoComplete="given-name"
                 placeholder="First name"
-                value={firstName}
-                onChange={(event) =>
-                  setFirstName(
-                    event.target.value,
-                  )
+                aria-invalid={
+                  errors.firstName
+                    ? "true"
+                    : "false"
                 }
-                disabled={submitting}
-                maxLength={100}
-                required
+                aria-describedby={
+                  errors.firstName
+                    ? "first-name-error"
+                    : undefined
+                }
+                disabled={
+                  isSubmitting
+                }
+                {...register(
+                  "firstName",
+                )}
               />
+
+              {errors.firstName && (
+                <p
+                  id="first-name-error"
+                  className="error-message"
+                  role="alert"
+                >
+                  {
+                    errors.firstName
+                      .message
+                  }
+                </p>
+              )}
             </div>
 
             <div className="form-field">
@@ -249,20 +235,39 @@ function RegisterPage() {
 
               <input
                 id="lastName"
-                name="lastName"
                 type="text"
                 autoComplete="family-name"
                 placeholder="Last name"
-                value={lastName}
-                onChange={(event) =>
-                  setLastName(
-                    event.target.value,
-                  )
+                aria-invalid={
+                  errors.lastName
+                    ? "true"
+                    : "false"
                 }
-                disabled={submitting}
-                maxLength={100}
-                required
+                aria-describedby={
+                  errors.lastName
+                    ? "last-name-error"
+                    : undefined
+                }
+                disabled={
+                  isSubmitting
+                }
+                {...register(
+                  "lastName",
+                )}
               />
+
+              {errors.lastName && (
+                <p
+                  id="last-name-error"
+                  className="error-message"
+                  role="alert"
+                >
+                  {
+                    errors.lastName
+                      .message
+                  }
+                </p>
+              )}
             </div>
           </div>
 
@@ -273,19 +278,36 @@ function RegisterPage() {
 
             <input
               id="register-email"
-              name="email"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              value={email}
-              onChange={(event) =>
-                setEmail(
-                  event.target.value,
-                )
+              aria-invalid={
+                errors.email
+                  ? "true"
+                  : "false"
               }
-              disabled={submitting}
-              required
+              aria-describedby={
+                errors.email
+                  ? "register-email-error"
+                  : undefined
+              }
+              disabled={
+                isSubmitting
+              }
+              {...register(
+                "email",
+              )}
             />
+
+            {errors.email && (
+              <p
+                id="register-email-error"
+                className="error-message"
+                role="alert"
+              >
+                {errors.email.message}
+              </p>
+            )}
           </div>
 
           <div className="form-field">
@@ -295,25 +317,47 @@ function RegisterPage() {
 
             <input
               id="register-password"
-              name="password"
               type="password"
               autoComplete="new-password"
               placeholder="At least 8 characters"
-              value={password}
-              onChange={(event) =>
-                setPassword(
-                  event.target.value,
-                )
+              aria-invalid={
+                errors.password
+                  ? "true"
+                  : "false"
               }
-              disabled={submitting}
-              minLength={8}
-              required
+              aria-describedby={
+                errors.password
+                  ? "register-password-error"
+                  : "register-password-help"
+              }
+              disabled={
+                isSubmitting
+              }
+              {...register(
+                "password",
+              )}
             />
 
-            <p className="field-help">
+            <p
+              id="register-password-help"
+              className="field-help"
+            >
               Use at least 8
               characters.
             </p>
+
+            {errors.password && (
+              <p
+                id="register-password-error"
+                className="error-message"
+                role="alert"
+              >
+                {
+                  errors.password
+                    .message
+                }
+              </p>
+            )}
           </div>
 
           <div className="form-field">
@@ -323,37 +367,59 @@ function RegisterPage() {
 
             <input
               id="confirmPassword"
-              name="confirmPassword"
               type="password"
               autoComplete="new-password"
               placeholder="Enter the password again"
-              value={confirmPassword}
-              onChange={(event) =>
-                setConfirmPassword(
-                  event.target.value,
-                )
+              aria-invalid={
+                errors.confirmPassword
+                  ? "true"
+                  : "false"
               }
-              disabled={submitting}
-              minLength={8}
-              required
+              aria-describedby={
+                errors.confirmPassword
+                  ? "confirm-password-error"
+                  : undefined
+              }
+              disabled={
+                isSubmitting
+              }
+              {...register(
+                "confirmPassword",
+              )}
             />
+
+            {errors.confirmPassword && (
+              <p
+                id="confirm-password-error"
+                className="error-message"
+                role="alert"
+              >
+                {
+                  errors
+                    .confirmPassword
+                    .message
+                }
+              </p>
+            )}
           </div>
 
-          {errorMessage && (
+          {serverErrorMessage && (
             <p
               className="error-message"
               role="alert"
             >
-              {errorMessage}
+              {serverErrorMessage}
             </p>
           )}
 
           <button
             className="primary-form-button"
             type="submit"
-            disabled={submitting}
+            disabled={
+              isSubmitting
+            }
           >
-            {submitting
+            {isSubmitting
               ? "Creating account..."
               : "Create account"}
           </button>
