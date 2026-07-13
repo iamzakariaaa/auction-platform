@@ -10,8 +10,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import { useAuth } from "../context/AuthContext";
 import "./MainLayout.css";
+import useAuth from "../hooks/useAuth";
 
 function MainLayout() {
   const navigate = useNavigate();

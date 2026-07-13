@@ -1,10 +1,13 @@
-import type { ReactElement } from "react";
+import type {
+  ReactElement,
+} from "react";
+
 import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import useAuth from "../hooks/useAuth";
 
-import { useAuth } from "../context/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactElement;
@@ -13,7 +16,8 @@ interface ProtectedRouteProps {
 function ProtectedRoute({
   children,
 }: ProtectedRouteProps) {
-  const location = useLocation();
+  const location =
+    useLocation();
 
   const {
     authenticated,
@@ -29,12 +33,18 @@ function ProtectedRoute({
   }
 
   if (!authenticated) {
+    const requestedLocation =
+      location.pathname +
+      location.search +
+      location.hash;
+
     return (
       <Navigate
         to="/login"
         replace
         state={{
-          from: location.pathname,
+          from:
+            requestedLocation,
         }}
       />
     );

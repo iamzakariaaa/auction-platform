@@ -4,37 +4,72 @@ import {
   Routes,
 } from "react-router-dom";
 
-import ProtectedRoute from "./routes/ProtectedRoute";
-import { AuthProvider } from "./context/AuthContext";
-import MainLayout from "./layouts/MainLayout";
-import AuctionsPage from "./pages/public/AuctionsPage";
-import MyBidsPage from "./pages/account/MyBidsPage";
-import WonAuctionsPage from "./pages/account/WonAuctionsPage";
-import AdminRoute from "./routes/AdminRoute";
-import AdminDashboardPage from "./pages/admin/dashboard/AdminDashboardPage";
-import AuctionDetailsPage from "./pages/public/AuctionDetailsPage";
-import AdminAuctionsPage from "./pages/admin/auctions/AdminAuctionsPage";
-import AuctionFormPage from "./pages/admin/auctions/AuctionFormPage";
-import AuctionImagesPage from "./pages/admin/auctions/AuctionImagesPage";
-import AdminAuctionBidsPage from "./pages/admin/auctions/AdminAuctionBidsPage";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
+import {
+  AuthProvider,
+} from "./context/AuthProvider";
 
+import MainLayout from
+  "./layouts/MainLayout";
+
+import ProtectedRoute from
+  "./routes/ProtectedRoute";
+
+import AdminRoute from
+  "./routes/AdminRoute";
+
+import AuctionDetailsPage from
+  "./pages/public/AuctionDetailsPage";
+
+import AuctionsPage from
+  "./pages/public/AuctionsPage";
+
+import LoginPage from
+  "./pages/auth/LoginPage";
+
+import RegisterPage from
+  "./pages/auth/RegisterPage";
+
+import MyBidsPage from
+  "./pages/account/MyBidsPage";
+
+import WonAuctionsPage from
+  "./pages/account/WonAuctionsPage";
+
+import AdminAuctionsPage from
+  "./pages/admin/auctions/AdminAuctionsPage";
+
+import AuctionFormPage from
+  "./pages/admin/auctions/AuctionFormPage";
+
+import AdminAuctionBidsPage from
+  "./pages/admin/auctions/AdminAuctionBidsPage";
+
+import AdminDashboardPage from
+  "./pages/admin/dashboard/AdminDashboardPage";
+
+import AuctionImagesPage from
+  "./pages/admin/auctions/AuctionImagesPage";
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route element={<MainLayout />}>
+          <Route
+            element={<MainLayout />}
+          >
             <Route
               path="/"
-              element={<AuctionsPage />}
+              element={
+                <AuctionsPage />
+              }
             />
 
             <Route
               path="/auctions/:auctionId"
-              element={<AuctionDetailsPage />}
+              element={
+                <AuctionDetailsPage />
+              }
             />
 
             <Route
@@ -45,6 +80,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/won-auctions"
               element={
@@ -63,6 +99,7 @@ function App() {
               </AdminRoute>
             }
           />
+
           <Route
             path="/admin/auctions"
             element={
@@ -89,6 +126,7 @@ function App() {
               </AdminRoute>
             }
           />
+
           <Route
             path="/admin/auctions/:auctionId/images"
             element={
@@ -114,7 +152,9 @@ function App() {
 
           <Route
             path="/register"
-            element={<RegisterPage />}
+            element={
+              <RegisterPage />
+            }
           />
         </Routes>
       </AuthProvider>

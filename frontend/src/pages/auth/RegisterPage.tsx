@@ -1,53 +1,106 @@
 import {
-  type FormEvent,
+  type SyntheticEvent,
   useEffect,
   useState,
 } from "react";
+
 import {
   Link,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
-import axios from "axios";
-import { register} from "../../api/authApi";
-import { useAuth } from "../../context/AuthContext";
+
+import {
+  register,
+} from "../../api/authApi";
+
+import {
+  getApiErrorMessage,
+} from "../../api/getApiErrorMessage";
+
+import useAuth from
+  "../../hooks/useAuth";
+
 import "./AuthPage.css";
 
+interface LocationState {
+  from?: string;
+}
+
 function RegisterPage() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
+
+  const location =
+    useLocation();
 
   const {
     authenticated,
+    loading,
     startSession,
   } = useAuth();
 
   const [firstName, setFirstName] =
     useState("");
+
   const [lastName, setLastName] =
     useState("");
+
   const [email, setEmail] =
     useState("");
+
   const [password, setPassword] =
     useState("");
+
   const [
     confirmPassword,
     setConfirmPassword,
   ] = useState("");
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
-  const [submitting, setSubmitting] =
-    useState(false);
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] = useState("");
+
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
+
+  const locationState =
+    location.state as
+      | LocationState
+      | null;
+
+  const destination =
+    getSafeDestination(
+      locationState?.from,
+    );
 
   useEffect(() => {
-    if (authenticated) {
-      navigate("/", {
-        replace: true,
-      });
+    if (
+      !loading &&
+      authenticated
+    ) {
+      navigate(
+        destination,
+        {
+          replace: true,
+        },
+      );
     }
-  }, [authenticated, navigate]);
+  }, [
+    authenticated,
+    destination,
+    loading,
+    navigate,
+  ]);
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
+    event: SyntheticEvent<
+      HTMLFormElement,
+      SubmitEvent
+    >,
   ) {
     event.preventDefault();
 
@@ -60,7 +113,9 @@ function RegisterPage() {
       lastName.trim();
 
     const normalizedEmail =
-      email.trim().toLowerCase();
+      email
+        .trim()
+        .toLowerCase();
 
     if (
       !normalizedFirstName ||
@@ -72,6 +127,7 @@ function RegisterPage() {
       setErrorMessage(
         "Please complete all fields.",
       );
+
       return;
     }
 
@@ -79,48 +135,62 @@ function RegisterPage() {
       setErrorMessage(
         "Password must contain at least 8 characters.",
       );
+
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (
+      password !==
+      confirmPassword
+    ) {
       setErrorMessage(
         "Passwords do not match.",
       );
+
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const response = await register({
-        firstName: normalizedFirstName,
-        lastName: normalizedLastName,
-        email: normalizedEmail,
-        password,
+      const response =
+        await register({
+          firstName:
+            normalizedFirstName,
+
+          lastName:
+            normalizedLastName,
+
+          email:
+            normalizedEmail,
+
+          password,
+        });
+
+      await startSession({
+        accessToken:
+          response.accessToken,
+
+        expiresIn:
+          response.expiresIn,
+
+        user:
+          response.user,
       });
 
-      await startSession(
-        response.accessToken,
+      navigate(
+        destination,
+        {
+          replace: true,
+        },
       );
-
-      navigate("/", {
-        replace: true,
-      });
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const responseMessage =
-          error.response?.data?.message;
-
-        setErrorMessage(
-          typeof responseMessage === "string"
-            ? responseMessage
-            : "Registration failed. Please check your information.",
-        );
-      } else {
-        setErrorMessage(
-          "An unexpected error occurred.",
-        );
-      }
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          "Registration failed. Please check your information.",
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -134,15 +204,20 @@ function RegisterPage() {
             Join the marketplace
           </p>
 
-          <h1>Create an account</h1>
+          <h1>
+            Create an account
+          </h1>
 
           <p className="form-description">
-            Register to participate in auctions,
-            place bids, and track your activity.
+            Register to participate
+            in auctions, place bids,
+            and track your activity.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+        >
           <div className="form-row">
             <div className="form-field">
               <label htmlFor="firstName">
@@ -204,7 +279,9 @@ function RegisterPage() {
               placeholder="you@example.com"
               value={email}
               onChange={(event) =>
-                setEmail(event.target.value)
+                setEmail(
+                  event.target.value,
+                )
               }
               disabled={submitting}
               required
@@ -234,7 +311,8 @@ function RegisterPage() {
             />
 
             <p className="field-help">
-              Use at least 8 characters.
+              Use at least 8
+              characters.
             </p>
           </div>
 
@@ -282,14 +360,38 @@ function RegisterPage() {
         </form>
 
         <p className="form-footer">
-          Already have an account?{" "}
-          <Link to="/login">
+          Already have an
+          account?{" "}
+
+          <Link
+            to="/login"
+            state={locationState}
+          >
             Login
           </Link>
         </p>
       </section>
     </main>
   );
+}
+
+function getSafeDestination(
+  requestedDestination:
+    string | undefined,
+): string {
+  if (
+    !requestedDestination ||
+    !requestedDestination.startsWith(
+      "/",
+    ) ||
+    requestedDestination.startsWith(
+      "//",
+    )
+  ) {
+    return "/";
+  }
+
+  return requestedDestination;
 }
 
 export default RegisterPage;

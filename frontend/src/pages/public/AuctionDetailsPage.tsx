@@ -40,6 +40,7 @@ import {
 } from "../../utils/formats";
 
 import "./AuctionDetailsPage.css";
+import useAuth from "../../hooks/useAuth";
 
 function AuctionDetailsPage() {
   const { auctionId } = useParams<{
@@ -64,10 +65,7 @@ function AuctionDetailsPage() {
     setSelectedImageId,
   ] = useState<string | null>(null);
 
-  const accessToken =
-    localStorage.getItem(
-      "accessToken",
-    );
+  const { authenticated } = useAuth();
 
   const auctionQuery =
     useAuctionDetailsQuery(
@@ -233,7 +231,7 @@ function AuctionDetailsPage() {
         auction.minimumBidIncrement;
 
   const canBid =
-    accessToken !== null &&
+    authenticated &&
     auction.status === "ACTIVE" &&
     auction.timeRemainingSeconds > 0;
 
@@ -327,7 +325,7 @@ function AuctionDetailsPage() {
 
       <BidSection
         authenticated={
-          accessToken !== null
+          authenticated
         }
         canBid={canBid}
         bidAmount={bidAmount}
